@@ -27,6 +27,8 @@ GameScreen currentScreen = LOGO;
 Font font = { 0 };
 Music music = { 0 };
 Sound fxCoin = { 0 };
+Texture2D grass = { 0 };
+Camera3D camera = { 0 };
 
 //----------------------------------------------------------------------------------
 // Local Variables Definition (local to this module)
@@ -67,13 +69,20 @@ int main(void)
     font = LoadFont("resources/mecha.png");
     music = LoadMusicStream("resources/ambient.ogg");
     fxCoin = LoadSound("resources/coin.wav");
+    grass = LoadTexture("resources/grass.png");
+
+    camera.position = (Vector3){ 0.0f, 0.0f, 1.0f };       // Camera position
+    camera.target = (Vector3){ 0.0f };         // Camera target it looks-at
+    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };             // Camera up vector (rotation over its axis)
+    camera.fovy = 60;             // Camera field-of-view aperture in Y (degrees) in perspective, used as near plane width in orthographic
+    camera.projection = CAMERA_PERSPECTIVE;         // Camera projection: CAMERA_PERSPECTIVE or CAMERA_ORTHOGRAPHIC
 
     SetMusicVolume(music, 1.0f);
-    PlayMusicStream(music);
+    // PlayMusicStream(music);
 
     // Setup and init first screen
-    currentScreen = LOGO;
-    InitLogoScreen();
+    currentScreen = GAMEPLAY;
+    InitGameplayScreen();
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
@@ -104,6 +113,7 @@ int main(void)
     UnloadFont(font);
     UnloadMusicStream(music);
     UnloadSound(fxCoin);
+    UnloadTexture(grass);
 
     CloseAudioDevice();     // Close audio context
 
@@ -218,7 +228,7 @@ static void UpdateDrawFrame(void)
 {
     // Update
     //----------------------------------------------------------------------------------
-    UpdateMusicStream(music);       // NOTE: Music keeps playing between screens
+    // UpdateMusicStream(music);       // NOTE: Music keeps playing between screens
 
     if (!onTransition)
     {
@@ -269,8 +279,9 @@ static void UpdateDrawFrame(void)
 
     // Draw
     //----------------------------------------------------------------------------------
-    BeginDrawing();
 
+    BeginDrawing();
+    
         ClearBackground(RAYWHITE);
 
         switch(currentScreen)

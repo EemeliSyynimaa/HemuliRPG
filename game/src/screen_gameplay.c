@@ -29,8 +29,15 @@
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
+#define MAP_WIDTH 20
+#define MAP_HEIGHT 15
+
+#define TILE_WIDTH 32
+#define TILE_HEIGHT 32
+
 static int framesCounter = 0;
 static int finishScreen = 0;
+static int tileMap[MAP_HEIGHT][MAP_WIDTH];
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
@@ -42,6 +49,14 @@ void InitGameplayScreen(void)
     // TODO: Initialize GAMEPLAY screen variables here!
     framesCounter = 0;
     finishScreen = 0;
+
+    for (int y = 0; y < MAP_HEIGHT; y++)
+    {
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            tileMap[y][x] = GetRandomValue(0, 1);
+        }
+    }
 }
 
 // Gameplay Screen Update logic
@@ -52,8 +67,8 @@ void UpdateGameplayScreen(void)
     // Press enter or tap to change to ENDING screen
     if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
     {
-        finishScreen = 1;
-        PlaySound(fxCoin);
+        // finishScreen = 1;
+        // PlaySound(fxCoin);
     }
 }
 
@@ -65,6 +80,19 @@ void DrawGameplayScreen(void)
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
+
+    camera.position.z += 0.1f;
+
+    BeginMode3D(camera);
+        for (float y = 0; y < MAP_HEIGHT; y++)
+        {
+            for (float x = 0; x < MAP_WIDTH; x++)
+            {
+                DrawBillboard(camera, grass, (Vector3) { x, y, 0 }, 1, WHITE);
+            }
+
+        }
+    EndMode3D();
 }
 
 // Gameplay Screen Unload logic
