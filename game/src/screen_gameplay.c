@@ -81,14 +81,25 @@ void DrawGameplayScreen(void)
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
-    camera.position.z += 0.1f;
+    UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+
+    static float hehe = 0.0f;
 
     BeginMode3D(camera);
-        for (float y = 0; y < MAP_HEIGHT; y++)
+        for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            for (float x = 0; x < MAP_WIDTH; x++)
+            for (int x = 0; x < MAP_WIDTH; x++)
             {
-                DrawBillboard(camera, grass, (Vector3) { x, y, 0 }, 1, WHITE);
+                hehe += 0.1f;
+                //DrawBillboard(camera, grass, (Vector3) { x, y, 0 }, 1, WHITE);
+                //DrawTexture(grass, x * TILE_WIDTH, y * TILE_HEIGHT, WHITE);
+                //DrawPlane((Vector3) { x, y, 0 }, (Vector2){ 1, 1 }, WHITE);
+                Rectangle source = { 0.0f, 0.0f, (float)grass.width, (float)grass.height };
+                Vector3 up = { 0.0f, 1.0f, 0.0f };
+                Vector3 position = { x, y, 0 };
+                Vector2 size = { 1.0f, 1.0f };
+                Vector2 origin = { 0.0f, 0.0f };
+                DrawBillboardPro(camera, grass, source, position, up, size, origin, hehe, WHITE);
             }
 
         }
