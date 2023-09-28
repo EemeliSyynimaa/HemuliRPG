@@ -71,9 +71,9 @@ int main(void)
     fxCoin = LoadSound("resources/coin.wav");
     grass = LoadTexture("resources/grass.png");
 
-    camera.position = (Vector3){ 0.0f, 0.0f, 1.0f };       // Camera position
+    camera.position = (Vector3){ 0.0f, 0.0f, 10.0f };       // Camera position
     camera.target = (Vector3){ 0.0f };         // Camera target it looks-at
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };             // Camera up vector (rotation over its axis)
+    camera.up = (Vector3){ 0.0f, -1.0f, 0.0f };             // Camera up vector (rotation over its axis)
     camera.fovy = 60;             // Camera field-of-view aperture in Y (degrees) in perspective, used as near plane width in orthographic
     camera.projection = CAMERA_PERSPECTIVE;         // Camera projection: CAMERA_PERSPECTIVE or CAMERA_ORTHOGRAPHIC
 

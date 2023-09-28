@@ -30,37 +30,8 @@
 
 void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
 {
-#if 0
-    // NOTE: Billboard size will maintain source rectangle aspect ratio, size will represent billboard width
-    Vector2 sizeRatio = { size.x * fabsf((float)size.x / size.y), size.y };
-
-    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
-
-    Vector3 right = { matView.m0, matView.m4, matView.m8 };
-    //Vector3 up = { matView.m1, matView.m5, matView.m9 };
-
-    Vector3 rightScaled = Vector3Scale(right, sizeRatio.x / 2);
-    Vector3 upScaled = Vector3Scale(up, sizeRatio.y / 2);
-
-    Vector3 p1 = Vector3Add(rightScaled, upScaled);
-    Vector3 p2 = Vector3Subtract(rightScaled, upScaled);
-
-    Vector3 p3 = Vector3Add(p1, p2);
-
-    Vector3 topLeft = Vector3Scale(p2, -1);
-    Vector3 topRight = p1;
-    Vector3 bottomRight = p2;
-    Vector3 bottomLeft = Vector3Scale(p1, -1);
-
-    // Translate points to the draw center (position)
-    topLeft = Vector3Add(topLeft, position);
-    topRight = Vector3Add(topRight, position);
-    bottomRight = Vector3Add(bottomRight, position);
-    bottomLeft = Vector3Add(bottomLeft, position);
-#endif
-
-    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, size.y, 0 });
-    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, size.y, 0 });
+    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, 0, size.y });
+    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, 0, size.y });
     Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
     Vector3 bottomLeft = position;
 
@@ -148,16 +119,15 @@ void DrawGameplayScreen(void)
     UpdateCamera(&camera, CAMERA_THIRD_PERSON);
 
     BeginMode3D(camera);
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (int z = 0; z < MAP_HEIGHT; z++)
         {
             for (int x = 0; x < MAP_WIDTH; x++)
             {
-                Vector3 position = { (float)x, (float)y, 0 };
+                Vector3 position = { (float)x, 0, (float)z };
                 Vector2 size = { 0.9f, 0.9f };
 
                 DrawGrass(camera, grass, position, size, WHITE);
             }
-
         }
     EndMode3D();
 }
