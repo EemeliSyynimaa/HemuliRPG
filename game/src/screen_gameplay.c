@@ -25,6 +25,70 @@
 
 #include "raylib.h"
 #include "screens.h"
+#include "rlgl.h"
+#include "raymath.h"
+
+void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
+{
+#if 0
+    // NOTE: Billboard size will maintain source rectangle aspect ratio, size will represent billboard width
+    Vector2 sizeRatio = { size.x * fabsf((float)size.x / size.y), size.y };
+
+    Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
+
+    Vector3 right = { matView.m0, matView.m4, matView.m8 };
+    //Vector3 up = { matView.m1, matView.m5, matView.m9 };
+
+    Vector3 rightScaled = Vector3Scale(right, sizeRatio.x / 2);
+    Vector3 upScaled = Vector3Scale(up, sizeRatio.y / 2);
+
+    Vector3 p1 = Vector3Add(rightScaled, upScaled);
+    Vector3 p2 = Vector3Subtract(rightScaled, upScaled);
+
+    Vector3 p3 = Vector3Add(p1, p2);
+
+    Vector3 topLeft = Vector3Scale(p2, -1);
+    Vector3 topRight = p1;
+    Vector3 bottomRight = p2;
+    Vector3 bottomLeft = Vector3Scale(p1, -1);
+
+    // Translate points to the draw center (position)
+    topLeft = Vector3Add(topLeft, position);
+    topRight = Vector3Add(topRight, position);
+    bottomRight = Vector3Add(bottomRight, position);
+    bottomLeft = Vector3Add(bottomLeft, position);
+#endif
+
+    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, size.y, 0 });
+    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, size.y, 0 });
+    Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
+    Vector3 bottomLeft = position;
+
+    rlSetTexture(texture.id);
+
+    rlBegin(RL_QUADS);
+    rlColor4ub(tint.r, tint.g, tint.b, tint.a);
+
+    // Bottom-left corner for texture and quad
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(topLeft.x, topLeft.y, topLeft.z);
+
+    // Top-left corner for texture and quad
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(bottomLeft.x, bottomLeft.y, bottomLeft.z);
+
+    // Top-right corner for texture and quad
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
+
+    // Bottom-right corner for texture and quad
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(topRight.x, topRight.y, topRight.z);
+
+    rlEnd();
+
+    rlSetTexture(0);
+}
 
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
@@ -83,23 +147,15 @@ void DrawGameplayScreen(void)
 
     UpdateCamera(&camera, CAMERA_THIRD_PERSON);
 
-    static float hehe = 0.0f;
-
     BeginMode3D(camera);
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             for (int x = 0; x < MAP_WIDTH; x++)
             {
-                hehe += 0.1f;
-                //DrawBillboard(camera, grass, (Vector3) { x, y, 0 }, 1, WHITE);
-                //DrawTexture(grass, x * TILE_WIDTH, y * TILE_HEIGHT, WHITE);
-                //DrawPlane((Vector3) { x, y, 0 }, (Vector2){ 1, 1 }, WHITE);
-                Rectangle source = { 0.0f, 0.0f, (float)grass.width, (float)grass.height };
-                Vector3 up = { 0.0f, 1.0f, 0.0f };
-                Vector3 position = { x, y, 0 };
-                Vector2 size = { 1.0f, 1.0f };
-                Vector2 origin = { 0.0f, 0.0f };
-                DrawBillboardPro(camera, grass, source, position, up, size, origin, hehe, WHITE);
+                Vector3 position = { (float)x, (float)y, 0 };
+                Vector2 size = { 0.9f, 0.9f };
+
+                DrawGrass(camera, grass, position, size, WHITE);
             }
 
         }
