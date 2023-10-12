@@ -27,6 +27,7 @@
 #include "screens.h"
 #include "rlgl.h"
 #include "raymath.h"
+#include "rcamera.h"
 
 void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
 {
@@ -123,9 +124,12 @@ void UpdateGameCamera(Camera* camera)
     // Camera movement
     if (!IsGamepadAvailable(0))
     {
-        // Mouse support
-        CameraYaw(camera, -mousePositionDelta.x * cameraMouseMoveSensitivity, rotateAroundTarget);
-        CameraPitch(camera, -mousePositionDelta.y * cameraMouseMoveSensitivity, lockView, rotateAroundTarget, rotateUp);
+        // Mouse support when right clicked.
+        if (IsMouseButtonDown(1))
+        {
+            CameraYaw(camera, -mousePositionDelta.x * cameraMouseMoveSensitivity, rotateAroundTarget);
+            CameraPitch(camera, -mousePositionDelta.y * cameraMouseMoveSensitivity, lockView, rotateAroundTarget, rotateUp);
+        }
 
         // Keyboard support
         if (IsKeyDown(KEY_W)) CameraMoveForward(camera, cameraMoveSpeed, moveInWorldPlane);
@@ -206,8 +210,8 @@ void DrawGameplayScreen(void)
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
-    //UpdateGameCamera(&camera);
-    UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+    //UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+    UpdateGameCamera(&camera);
 
     BeginMode3D(camera);
     for (int z = 0; z < MAP_HEIGHT; z++)
