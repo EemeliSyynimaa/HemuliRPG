@@ -61,6 +61,44 @@ void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size,
     rlSetTexture(0);
 }
 
+void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
+{
+    float depth = -0.001f;
+
+    rlBegin(RL_LINES);
+
+    for (int i = 0; i <= mapWidth; i++)
+    {
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+
+        rlVertex3f((float)i * spacing, depth, (float)0.0f * spacing);
+        rlVertex3f((float)i * spacing, depth, (float)mapHeight * spacing);
+
+        // Original code.
+        //rlVertex3f((float)0.0f * spacing, 0.0f, (float)i * spacing);
+        //rlVertex3f((float)MAP_HEIGHT * spacing, 0.0f, (float)i * spacing);
+    }
+    for (int i = 0; i <= mapHeight; i++)
+    {
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+        rlColor3f(0.75f, 0.75f, 0.75f);
+
+        // Original code.
+        //rlVertex3f((float)i * spacing, 0.0f, (float)0.0f * spacing);
+        //rlVertex3f((float)i * spacing, 0.0f, (float)MAP_WIDTH * spacing);
+
+        rlVertex3f((float)0.0f * spacing, depth, (float)i * spacing);
+        rlVertex3f((float)mapWidth * spacing, depth, (float)i * spacing);
+    }
+
+    rlEnd();
+}
+
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
@@ -119,21 +157,23 @@ void DrawGameplayScreen(void)
     UpdateCamera(&camera, CAMERA_THIRD_PERSON);
 
     BeginMode3D(camera);
-        for (int z = 0; z < MAP_HEIGHT; z++)
+    for (int z = 0; z < MAP_HEIGHT; z++)
+    {
+        for (int x = 0; x < MAP_WIDTH; x++)
         {
-            for (int x = 0; x < MAP_WIDTH; x++)
-            {
-                Vector3 position = { (float)x, 0, (float)z };
-                Vector2 size = { 1.0f, 1.0f };
+            Vector3 position = { (float)x, 0, (float)z };
+            Vector2 size = { 1.0f, 1.0f };
 
-                DrawGrass(camera, grass, position, size, WHITE);
-            }
+            DrawGrass(camera, grass, position, size, WHITE);
         }
+    }
 
-        Vector2 size = { 1.0f, 1.0f };
-        Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
+    DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1.0f);
 
-        DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
+    Vector2 size = { 1.0f, 1.0f };
+    Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
+
+    DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
 
     EndMode3D();
 }
