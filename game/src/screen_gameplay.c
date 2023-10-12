@@ -99,6 +99,58 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
+void UpdateGameCamera(Camera* camera)
+{
+    Vector2 mousePositionDelta = GetMouseDelta();
+
+    bool moveInWorldPlane = true;
+    bool rotateAroundTarget = true;
+    bool lockView = true;
+    bool rotateUp = false;
+
+    float cameraMoveSpeed = 0.09f;
+    float cameraRotationSpeed = 0.03f;
+    float cameraMouseMoveSensitivity = 0.003f;
+
+    // Camera rotation
+    if (IsKeyDown(KEY_DOWN)) CameraPitch(camera, -cameraRotationSpeed, lockView, rotateAroundTarget, rotateUp);
+    if (IsKeyDown(KEY_UP)) CameraPitch(camera, cameraRotationSpeed, lockView, rotateAroundTarget, rotateUp);
+    if (IsKeyDown(KEY_RIGHT)) CameraYaw(camera, -cameraRotationSpeed, rotateAroundTarget);
+    if (IsKeyDown(KEY_LEFT)) CameraYaw(camera, cameraRotationSpeed, rotateAroundTarget);
+    if (IsKeyDown(KEY_Q)) CameraRoll(camera, -cameraRotationSpeed);
+    if (IsKeyDown(KEY_E)) CameraRoll(camera, cameraRotationSpeed);
+
+    // Camera movement
+    if (!IsGamepadAvailable(0))
+    {
+        // Mouse support
+        CameraYaw(camera, -mousePositionDelta.x * cameraMouseMoveSensitivity, rotateAroundTarget);
+        CameraPitch(camera, -mousePositionDelta.y * cameraMouseMoveSensitivity, lockView, rotateAroundTarget, rotateUp);
+
+        // Keyboard support
+        if (IsKeyDown(KEY_W)) CameraMoveForward(camera, cameraMoveSpeed, moveInWorldPlane);
+        if (IsKeyDown(KEY_A)) CameraMoveRight(camera, -cameraMoveSpeed, moveInWorldPlane);
+        if (IsKeyDown(KEY_S)) CameraMoveForward(camera, -cameraMoveSpeed, moveInWorldPlane);
+        if (IsKeyDown(KEY_D)) CameraMoveRight(camera, cameraMoveSpeed, moveInWorldPlane);
+    }
+    else
+    {
+        // Gamepad controller support
+        CameraYaw(camera, -(GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X) * 2) * cameraMouseMoveSensitivity, rotateAroundTarget);
+        CameraPitch(camera, -(GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_Y) * 2) * cameraMouseMoveSensitivity, lockView, rotateAroundTarget, rotateUp);
+
+        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y) <= -0.25f) CameraMoveForward(camera, cameraMoveSpeed, moveInWorldPlane);
+        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X) <= -0.25f) CameraMoveRight(camera, -cameraMoveSpeed, moveInWorldPlane);
+        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y) >= 0.25f) CameraMoveForward(camera, -cameraMoveSpeed, moveInWorldPlane);
+        if (GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X) >= 0.25f) CameraMoveRight(camera, cameraMoveSpeed, moveInWorldPlane);
+    }
+
+    // Zoom target distance
+    CameraMoveToTarget(camera, -GetMouseWheelMove());
+    if (IsKeyPressed(KEY_KP_SUBTRACT)) CameraMoveToTarget(camera, 2.0f);
+    if (IsKeyPressed(KEY_KP_ADD)) CameraMoveToTarget(camera, -2.0f);
+}
+
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
@@ -154,6 +206,7 @@ void DrawGameplayScreen(void)
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
+    //UpdateGameCamera(&camera);
     UpdateCamera(&camera, CAMERA_THIRD_PERSON);
 
     BeginMode3D(camera);
