@@ -28,6 +28,7 @@ Font font = { 0 };
 Music music = { 0 };
 Sound fxCoin = { 0 };
 Texture2D grass = { 0 };
+Texture2D orc = { 0 };
 Camera3D camera = { 0 };
 
 //----------------------------------------------------------------------------------
@@ -70,6 +71,7 @@ int main(void)
     music = LoadMusicStream("resources/ambient.ogg");
     fxCoin = LoadSound("resources/coin.wav");
     grass = LoadTexture("resources/grass.png");
+    orc = LoadTexture("resources/orc.png");
 
     camera.position = (Vector3){ 0.0f, 0.0f, 10.0f };       // Camera position
     camera.target = (Vector3){ 0.0f };         // Camera target it looks-at
@@ -114,6 +116,7 @@ int main(void)
     UnloadMusicStream(music);
     UnloadSound(fxCoin);
     UnloadTexture(grass);
+    UnloadTexture(orc);
 
     CloseAudioDevice();     // Close audio context
 

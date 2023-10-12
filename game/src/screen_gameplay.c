@@ -124,11 +124,17 @@ void DrawGameplayScreen(void)
             for (int x = 0; x < MAP_WIDTH; x++)
             {
                 Vector3 position = { (float)x, 0, (float)z };
-                Vector2 size = { 0.9f, 0.9f };
+                Vector2 size = { 1.0f, 1.0f };
 
                 DrawGrass(camera, grass, position, size, WHITE);
             }
         }
+
+        Vector2 size = { 1.0f, 1.0f };
+        Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
+
+        DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
+
     EndMode3D();
 }
 

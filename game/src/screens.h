@@ -39,6 +39,7 @@ extern Font font;
 extern Music music;
 extern Sound fxCoin;
 extern Texture2D grass;
+extern Texture2D orc;
 extern Camera3D camera;
 
 #ifdef __cplusplus
