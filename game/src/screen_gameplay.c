@@ -29,36 +29,40 @@
 #include "raymath.h"
 #include "rcamera.h"
 
-void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
+void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
 {
     Vector3 topLeft = Vector3Add(position, (Vector3) { 0, 0, size.y });
     Vector3 topRight = Vector3Add(position, (Vector3) { size.x, 0, size.y });
     Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
     Vector3 bottomLeft = position;
 
-    rlSetTexture(texture.id);
-
     rlBegin(RL_QUADS);
-    rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
-    // Bottom-left corner for texture and quad
-    rlTexCoord2f(0.0f, 0.0f);
-    rlVertex3f(topLeft.x, topLeft.y, topLeft.z);
+        rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
-    // Top-left corner for texture and quad
-    rlTexCoord2f(0.0f, 1.0f);
-    rlVertex3f(bottomLeft.x, bottomLeft.y, bottomLeft.z);
+        // Bottom-left corner for texture and quad
+        rlTexCoord2f(0.0f, 0.0f);
+        rlVertex3f(topLeft.x, topLeft.y, topLeft.z);
 
-    // Top-right corner for texture and quad
-    rlTexCoord2f(1.0f, 1.0f);
-    rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
+        // Top-left corner for texture and quad
+        rlTexCoord2f(0.0f, 1.0f);
+        rlVertex3f(bottomLeft.x, bottomLeft.y, bottomLeft.z);
 
-    // Bottom-right corner for texture and quad
-    rlTexCoord2f(1.0f, 0.0f);
-    rlVertex3f(topRight.x, topRight.y, topRight.z);
+        // Top-right corner for texture and quad
+        rlTexCoord2f(1.0f, 1.0f);
+        rlVertex3f(bottomRight.x, bottomRight.y, bottomRight.z);
+
+        // Bottom-right corner for texture and quad
+        rlTexCoord2f(1.0f, 0.0f);
+        rlVertex3f(topRight.x, topRight.y, topRight.z);
 
     rlEnd();
+}
 
+void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
+{
+    rlSetTexture(texture.id);
+    DrawRectangle3D(camera, position, size, tint);
     rlSetTexture(0);
 }
 
@@ -213,6 +217,14 @@ void DrawGameplayScreen(void)
     //UpdateCamera(&camera, CAMERA_THIRD_PERSON);
     UpdateGameCamera(&camera);
 
+    Vector3 bottomLeft = { 0.0f, 0.0f, 0.0f };
+    Vector3 bottomRight = { MAP_WIDTH, 0.0f, 0.0f };
+    Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
+    Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
+
+    Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
+    RayCollision hitMap = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
+
     BeginMode3D(camera);
         for (int z = 0; z < MAP_HEIGHT; z++)
         {
@@ -227,20 +239,22 @@ void DrawGameplayScreen(void)
 
         DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1.0f);
 
+        if (hitMap.hit)
+        {
+            float selectionRectX = floorf(hitMap.point.x);
+            float selectionRectZ = floorf(hitMap.point.z);
+            Vector3 selectionRectPos = { selectionRectX, 0.0f, selectionRectZ };
+
+            Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 128 };
+            DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
+        }
+
         Vector2 size = { 1.0f, 1.0f };
         Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
 
         DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
 
     EndMode3D();
-
-    Vector3 bottomLeft = { 0.0f, 0.0f, 0.0f };
-    Vector3 bottomRight = { MAP_WIDTH, 0.0f, 0.0f };
-    Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
-    Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
-
-    Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
-    RayCollision hitMap = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
 
     if (hitMap.hit)
     {
