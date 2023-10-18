@@ -118,8 +118,8 @@ void UpdateGameCamera(Camera* camera)
     if (IsKeyDown(KEY_UP)) CameraPitch(camera, cameraRotationSpeed, lockView, rotateAroundTarget, rotateUp);
     if (IsKeyDown(KEY_RIGHT)) CameraYaw(camera, -cameraRotationSpeed, rotateAroundTarget);
     if (IsKeyDown(KEY_LEFT)) CameraYaw(camera, cameraRotationSpeed, rotateAroundTarget);
-    if (IsKeyDown(KEY_Q)) CameraRoll(camera, -cameraRotationSpeed);
-    if (IsKeyDown(KEY_E)) CameraRoll(camera, cameraRotationSpeed);
+    //if (IsKeyDown(KEY_Q)) CameraRoll(camera, -cameraRotationSpeed);
+    //if (IsKeyDown(KEY_E)) CameraRoll(camera, cameraRotationSpeed);
 
     // Camera movement
     if (!IsGamepadAvailable(0))
@@ -214,25 +214,39 @@ void DrawGameplayScreen(void)
     UpdateGameCamera(&camera);
 
     BeginMode3D(camera);
-    for (int z = 0; z < MAP_HEIGHT; z++)
-    {
-        for (int x = 0; x < MAP_WIDTH; x++)
+        for (int z = 0; z < MAP_HEIGHT; z++)
         {
-            Vector3 position = { (float)x, 0, (float)z };
-            Vector2 size = { 1.0f, 1.0f };
+            for (int x = 0; x < MAP_WIDTH; x++)
+            {
+                Vector3 position = { (float)x, 0, (float)z };
+                Vector2 size = { 1.0f, 1.0f };
 
-            DrawGrass(camera, grass, position, size, WHITE);
+                DrawGrass(camera, grass, position, size, WHITE);
+            }
         }
-    }
 
-    DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1.0f);
+        DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1.0f);
 
-    Vector2 size = { 1.0f, 1.0f };
-    Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
+        Vector2 size = { 1.0f, 1.0f };
+        Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
 
-    DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
+        DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
 
     EndMode3D();
+
+    Vector3 bottomLeft = { 0.0f, 0.0f, 0.0f };
+    Vector3 bottomRight = { MAP_WIDTH, 0.0f, 0.0f };
+    Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
+    Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
+
+    Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
+    RayCollision hitMap = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
+
+    if (hitMap.hit)
+    {
+        DrawText(TextFormat("HIT %.3f | %.3f | %.3f", hitMap.point.x, hitMap.point.y, hitMap.point.z), 130, 200, 20, MAROON);
+        //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+    }
 }
 
 // Gameplay Screen Unload logic
