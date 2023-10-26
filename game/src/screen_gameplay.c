@@ -223,6 +223,9 @@ void UpdateGameplayScreen(void)
     }
 }
 
+// TODO WHERE TO PUT THIS
+int selection = -1;
+
 // Gameplay Screen Draw logic
 void DrawGameplayScreen(void)
 {
@@ -267,11 +270,12 @@ void DrawGameplayScreen(void)
 
         RayCollision hitMapTemp = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
 
-        if (hitMapTemp.hit)
+        if (hitMapTemp.hit && IsMouseButtonDown(0))
         {
             hitMapTemp.point = entities[i].position;
             DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapTemp.point.x, hitMapTemp.point.y, hitMapTemp.point.z), 130, 180, 20, MAROON);
             //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+            selection = i;
             hitMap = hitMapTemp;
         }
     }
@@ -303,6 +307,11 @@ void DrawGameplayScreen(void)
 
             Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 128 };
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
+
+            if (IsMouseButtonDown(0))
+            {
+                entities[selection].position = selectionRectPos;
+            }
         }
 
         for (int i = 0; i < MAX_ENTITIES; i++)
