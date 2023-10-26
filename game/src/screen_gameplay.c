@@ -29,6 +29,7 @@
 #include "raymath.h"
 #include "rcamera.h"
 #include "entity.h"
+#include "float.h"
 
 void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
 {
@@ -261,6 +262,30 @@ void DrawGameplayScreen(void)
 
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
     RayCollision hitMap = { 0 };
+
+    for (int i = 0; i < MAX_ENTITIES - 1; i++)
+    {
+        float smallestDistance = FLT_MAX;
+        int entityIndex = i;
+
+        for (int j = i + 1; j < MAX_ENTITIES; j++)
+        {
+            float distance = Vector3Distance(entities[i].position, camera.position);
+
+            if (distance < smallestDistance)
+            {
+                smallestDistance = distance;
+                entityIndex = j;
+            }
+        }
+
+        if (entityIndex != i)
+        {
+            Entity temp = entities[i];
+            entities[i] = entities[entityIndex];
+            entities[entityIndex] = temp;
+        }
+    }
 
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
