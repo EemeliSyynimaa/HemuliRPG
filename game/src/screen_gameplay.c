@@ -105,6 +105,21 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
+void DrawEntity(Entity entity, Camera camera)
+{
+    Vector3 up = { 0.0f, -1.0f, 0.0f };
+    Vector2 origin = Vector2Zero();
+    float rotation = 0.0f;
+    Color tint = WHITE;
+
+    // Render separate from map position.
+    entity.position.x += 0.5f;
+    entity.position.y += -0.5f;
+    entity.position.z += 0.5f;
+
+    DrawBillboardPro(camera, entity.texture, entity.textureRect, entity.position, up, entity.size, origin, rotation, tint);
+}
+
 void UpdateGameCamera(Camera* camera)
 {
     Vector2 mousePositionDelta = GetMouseDelta();
@@ -225,8 +240,9 @@ void DrawGameplayScreen(void)
     Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
    
     Entity orc = {0};
-    orc.position = (Vector3){ 1.5f, -0.5f, 1.5f };
+    orc.position = (Vector3){ 1.0f, 0.0f, 1.0f };
     orc.size = (Vector2){ 1.0f, 1.0f };
+    orc.texture = orcTexture;
     orc.textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
 
     Vector3 orcBoxMin = { 1.0f, -0.25f, 1.0f };
@@ -272,7 +288,8 @@ void DrawGameplayScreen(void)
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
         }
 
-        DrawBillboardPro(camera, orcTexture, orc.textureRect, orc.position, (Vector3) { 0.0f, -1.0f, 0.0f }, orc.size, Vector2Zero(), 0.0f, WHITE);
+        //DrawBillboardPro(camera, orcTexture, orc.textureRect, orc.position, (Vector3) { 0.0f, -1.0f, 0.0f }, orc.size, Vector2Zero(), 0.0f, WHITE);
+        DrawEntity(orc, camera);
         DrawBoundingBox(orc.boundingBox, WHITE);
 
     EndMode3D();
