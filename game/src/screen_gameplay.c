@@ -184,6 +184,8 @@ void UpdateGameCamera(Camera* camera)
 #define TILE_WIDTH 32
 #define TILE_HEIGHT 32
 
+#define MAX_ENTITIES 2
+
 static int framesCounter = 0;
 static int finishScreen = 0;
 static int tileMap[MAP_HEIGHT][MAP_WIDTH];
@@ -238,25 +240,40 @@ void DrawGameplayScreen(void)
     Vector3 bottomRight = { MAP_WIDTH, 0.0f, 0.0f };
     Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
     Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
-   
-    Entity orc = {0};
-    orc.position = (Vector3){ 1.0f, 0.0f, 1.0f };
-    orc.size = (Vector2){ 1.0f, 1.0f };
-    orc.texture = orcTexture;
-    orc.textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
 
-    Vector3 orcBoxMin = { 1.0f, -0.25f, 1.0f };
-    Vector3 orcBoxMax = { 2.0f, 0.0f, 2.0f };
-    orc.boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+    Entity entities[MAX_ENTITIES] = { 0 };
+   
+    entities[0].position = (Vector3){1.0f, 0.0f, 1.0f};
+    entities[0].size = (Vector2){ 1.0f, 1.0f };
+    entities[0].texture = orcTexture;
+    entities[0].textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
+
+    entities[1].position = (Vector3){ 4.0f, 0.0f, 7.0f };
+    entities[1].size = (Vector2){ 1.0f, 1.0f };
+    entities[1].texture = orcTexture;
+    entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
+
+    float boxSize = 1.0f;
+    float boxHeight = 0.05f;
 
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
-    RayCollision hitMap = GetRayCollisionBox(mouseRay, orc.boundingBox);
+    RayCollision hitMap = { 0 };
 
-    if (hitMap.hit)
+    for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        hitMap.point = orc.position;
-        DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMap.point.x, hitMap.point.y, hitMap.point.z), 130, 180, 20, MAROON);
-        //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+        Vector3 orcBoxMin = { entities[i].position.x, entities[i].position.y - boxHeight, entities[i].position.z };
+        Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.z + boxSize };
+        entities[i].boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+
+        RayCollision hitMapTemp = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
+
+        if (hitMapTemp.hit)
+        {
+            hitMapTemp.point = entities[i].position;
+            DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapTemp.point.x, hitMapTemp.point.y, hitMapTemp.point.z), 130, 180, 20, MAROON);
+            //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+            hitMap = hitMapTemp;
+        }
     }
 
     if (hitMap.hit == false)
@@ -288,9 +305,11 @@ void DrawGameplayScreen(void)
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
         }
 
-        //DrawBillboardPro(camera, orcTexture, orc.textureRect, orc.position, (Vector3) { 0.0f, -1.0f, 0.0f }, orc.size, Vector2Zero(), 0.0f, WHITE);
-        DrawEntity(orc, camera);
-        DrawBoundingBox(orc.boundingBox, WHITE);
+        for (int i = 0; i < MAX_ENTITIES; i++)
+        {
+            DrawEntity(entities[i], camera);
+            DrawBoundingBox(entities[i].boundingBox, WHITE);
+        }
 
     EndMode3D();
 
