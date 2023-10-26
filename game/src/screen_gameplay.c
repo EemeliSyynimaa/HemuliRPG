@@ -222,8 +222,28 @@ void DrawGameplayScreen(void)
     Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
     Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
 
+    Vector3 orcPos = { 1.5f, -0.5f, 1.5f };
+    Vector2 orcSize = { 1.0f, 1.0f };
+    Rectangle orcRekt = { 0.0f, 0.0f, orc.width, orc.height };
+
+    Vector3 orcBoxMin = { 1.0f, -0.25f, 1.0f };
+    Vector3 orcBoxMax = { 2.0f, 0.0f, 2.0f };
+    BoundingBox orcBox = { orcBoxMin, orcBoxMax };
+
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
-    RayCollision hitMap = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
+    RayCollision hitMap = GetRayCollisionBox(mouseRay, orcBox);
+
+    if (hitMap.hit)
+    {
+        hitMap.point = orcPos;
+        DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMap.point.x, hitMap.point.y, hitMap.point.z), 130, 180, 20, MAROON);
+        //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+    }
+
+    if (hitMap.hit == false)
+    {
+        hitMap = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
+    }
 
     BeginMode3D(camera);
         for (int z = 0; z < MAP_HEIGHT; z++)
@@ -249,10 +269,8 @@ void DrawGameplayScreen(void)
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
         }
 
-        Vector2 size = { 1.0f, 1.0f };
-        Rectangle rekt = { 0.0f, 0.0f, orc.width, orc.height };
-
-        DrawBillboardPro(camera, orc, rekt, (Vector3) { 1.5f, -0.5f, 1.5f }, (Vector3) { 0.0f, -1.0f, 0.0f }, size, Vector2Zero(), 0.0f, WHITE);
+        DrawBillboardPro(camera, orc, orcRekt, orcPos, (Vector3) { 0.0f, -1.0f, 0.0f }, orcSize, Vector2Zero(), 0.0f, WHITE);
+        DrawBoundingBox(orcBox, WHITE);
 
     EndMode3D();
 
