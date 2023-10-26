@@ -38,8 +38,8 @@ extern GameScreen currentScreen;
 extern Font font;
 extern Music music;
 extern Sound fxCoin;
-extern Texture2D grass;
-extern Texture2D orc;
+extern Texture2D grassTexture;
+extern Texture2D orcTexture;
 extern Camera3D camera;
 
 #ifdef __cplusplus

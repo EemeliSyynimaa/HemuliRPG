@@ -27,8 +27,8 @@ GameScreen currentScreen = LOGO;
 Font font = { 0 };
 Music music = { 0 };
 Sound fxCoin = { 0 };
-Texture2D grass = { 0 };
-Texture2D orc = { 0 };
+Texture2D grassTexture = { 0 };
+Texture2D orcTexture = { 0 };
 Camera3D camera = { 0 };
 
 //----------------------------------------------------------------------------------
@@ -70,8 +70,8 @@ int main(void)
     font = LoadFont("resources/mecha.png");
     music = LoadMusicStream("resources/ambient.ogg");
     fxCoin = LoadSound("resources/coin.wav");
-    grass = LoadTexture("resources/grass.png");
-    orc = LoadTexture("resources/orc.png");
+    grassTexture = LoadTexture("resources/grass.png");
+    orcTexture = LoadTexture("resources/orc.png");
 
     camera.position = (Vector3){ 0.0f, 0.0f, 10.0f };       // Camera position
     camera.target = (Vector3){ 0.0f };         // Camera target it looks-at
@@ -115,8 +115,8 @@ int main(void)
     UnloadFont(font);
     UnloadMusicStream(music);
     UnloadSound(fxCoin);
-    UnloadTexture(grass);
-    UnloadTexture(orc);
+    UnloadTexture(grassTexture);
+    UnloadTexture(orcTexture);
 
     CloseAudioDevice();     // Close audio context
 
