@@ -265,25 +265,18 @@ void DrawGameplayScreen(void)
 
     for (int i = 0; i < MAX_ENTITIES - 1; i++)
     {
-        float smallestDistance = FLT_MAX;
-        int entityIndex = i;
+        float distanceA = Vector3Distance(entities[i].position, camera.position);
 
         for (int j = i + 1; j < MAX_ENTITIES; j++)
         {
-            float distance = Vector3Distance(entities[i].position, camera.position);
+            float distanceB = Vector3Distance(entities[j].position, camera.position);
 
-            if (distance < smallestDistance)
+            if (distanceA < distanceB)
             {
-                smallestDistance = distance;
-                entityIndex = j;
+                Entity temp = entities[i];
+                entities[i] = entities[j];
+                entities[j] = temp;
             }
-        }
-
-        if (entityIndex != i)
-        {
-            Entity temp = entities[i];
-            entities[i] = entities[entityIndex];
-            entities[entityIndex] = temp;
         }
     }
 
