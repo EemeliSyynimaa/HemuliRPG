@@ -106,6 +106,9 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
+// TODO WHERE TO PUT THIS
+int selection = -1;
+
 void DrawEntity(Entity entity, Camera camera)
 {
     Vector3 up = { 0.0f, -1.0f, 0.0f };
@@ -119,6 +122,46 @@ void DrawEntity(Entity entity, Camera camera)
     entity.position.z += 0.5f;
 
     DrawBillboardPro(camera, entity.texture, entity.textureRect, entity.position, up, entity.size, origin, rotation, tint);
+}
+
+void DrawEntities(Entity entities[], int numEntities, Camera camera)
+{
+    // HAX: pls fix at some point
+    int renderQueue[128] = { 0 };
+
+    for (int i = 0; i < numEntities; i++)
+    {
+        renderQueue[i] = i;
+    }
+
+    for (int i = 0; i < numEntities - 1; i++)
+    {
+        float distanceA = Vector3Distance(entities[i].position, camera.position);
+
+        for (int j = i + 1; j < numEntities; j++)
+        {
+            float distanceB = Vector3Distance(entities[j].position, camera.position);
+
+            if (distanceA < distanceB)
+            {
+                int temp = renderQueue[i];
+                renderQueue[i] = renderQueue[j];
+                renderQueue[j] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < numEntities; i++)
+    {
+        if (renderQueue[i] == selection)
+        {
+            Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
+            DrawRectangle3D(camera, entities[renderQueue[i]].position, (Vector2) { 1.0f, 1.0f }, color);
+        }
+
+        DrawEntity(entities[renderQueue[i]], camera);
+        DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
+    }
 }
 
 void UpdateGameCamera(Camera* camera)
@@ -224,9 +267,6 @@ void UpdateGameplayScreen(void)
     }
 }
 
-// TODO WHERE TO PUT THIS
-int selection = -1;
-
 // Gameplay Screen Draw logic
 void DrawGameplayScreen(void)
 {
@@ -250,35 +290,18 @@ void DrawGameplayScreen(void)
     entities[0].position = (Vector3){1.0f, 0.0f, 1.0f};
     entities[0].size = (Vector2){ 1.0f, 1.0f };
     entities[0].texture = orcTexture;
-    entities[0].textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
+    entities[0].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
 
     entities[1].position = (Vector3){ 4.0f, 0.0f, 7.0f };
     entities[1].size = (Vector2){ 1.0f, 1.0f };
     entities[1].texture = orcTexture;
-    entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, orcTexture.width, orcTexture.height };
+    entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
 
     float boxSize = 1.0f;
     float boxHeight = 0.05f;
 
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
     RayCollision hitMap = { 0 };
-
-    for (int i = 0; i < MAX_ENTITIES - 1; i++)
-    {
-        float distanceA = Vector3Distance(entities[i].position, camera.position);
-
-        for (int j = i + 1; j < MAX_ENTITIES; j++)
-        {
-            float distanceB = Vector3Distance(entities[j].position, camera.position);
-
-            if (distanceA < distanceB)
-            {
-                Entity temp = entities[i];
-                entities[i] = entities[j];
-                entities[j] = temp;
-            }
-        }
-    }
 
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
@@ -315,7 +338,7 @@ void DrawGameplayScreen(void)
             }
         }
 
-        DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1.0f);
+        DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1);
 
         if (hitMap.hit)
         {
@@ -323,20 +346,20 @@ void DrawGameplayScreen(void)
             float selectionRectZ = floorf(hitMap.point.z);
             Vector3 selectionRectPos = { selectionRectX, 0.0f, selectionRectZ };
 
-            Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 128 };
+            Color color = { WHITE.r, WHITE.g, WHITE.b, 96 };
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
 
-            if (IsMouseButtonDown(0))
+            if (IsMouseButtonDown(0) && selection != -1)
             {
-                entities[selection].position = selectionRectPos;
+                Entity* entity = &entities[selection];
+                entity->position = selectionRectPos;
+                Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
+                Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
+                entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
             }
         }
 
-        for (int i = 0; i < MAX_ENTITIES; i++)
-        {
-            DrawEntity(entities[i], camera);
-            DrawBoundingBox(entities[i].boundingBox, WHITE);
-        }
+        DrawEntities(entities, MAX_ENTITIES, camera);
 
     EndMode3D();
 
