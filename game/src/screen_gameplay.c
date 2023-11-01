@@ -308,16 +308,39 @@ void DrawGameplayScreen(void)
         Vector3 orcBoxMin = { entities[i].position.x, entities[i].position.y - boxHeight, entities[i].position.z };
         Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.z + boxSize };
         entities[i].boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+    }
 
-        RayCollision hitMapTemp = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
+    if (IsMouseButtonPressed(0))
+    {
+        bool entityPicked = false;
 
-        if (hitMapTemp.hit && IsMouseButtonDown(0))
+        for (int i = 0; i < MAX_ENTITIES; i++)
         {
-            hitMapTemp.point = entities[i].position;
-            DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapTemp.point.x, hitMapTemp.point.y, hitMapTemp.point.z), 130, 180, 20, MAROON);
-            //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
-            selection = i;
-            hitMap = hitMapTemp;
+            RayCollision hitMapTemp = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
+
+            if (hitMapTemp.hit)
+            {
+                hitMapTemp.point = entities[i].position;
+                DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapTemp.point.x, hitMapTemp.point.y, hitMapTemp.point.z), 130, 180, 20, MAROON);
+                //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+                selection = i;
+                hitMap = hitMapTemp;
+                entityPicked = true;
+            }
+        }
+
+        if (!entityPicked && selection != -1)
+        {
+            float selectionRectX = floorf(hitMap.point.x);
+            float selectionRectZ = floorf(hitMap.point.z);
+            Vector3 selectionRectPos = { selectionRectX, 0.0f, selectionRectZ };
+
+            Entity* entity = &entities[selection];
+            entity->position = selectionRectPos;
+            Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
+            Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
+            entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+            selection = -1;
         }
     }
 
@@ -348,15 +371,6 @@ void DrawGameplayScreen(void)
 
             Color color = { WHITE.r, WHITE.g, WHITE.b, 96 };
             DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
-
-            if (IsMouseButtonDown(0) && selection != -1)
-            {
-                Entity* entity = &entities[selection];
-                entity->position = selectionRectPos;
-                Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
-                Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
-                entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
-            }
         }
 
         DrawEntities(entities, MAX_ENTITIES, camera);
