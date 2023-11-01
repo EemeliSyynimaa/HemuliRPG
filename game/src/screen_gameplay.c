@@ -234,11 +234,13 @@ static int framesCounter = 0;
 static int finishScreen = 0;
 static int tileMap[MAP_HEIGHT][MAP_WIDTH];
 
+Entity entities[MAX_ENTITIES] = { 0 };
+RayCollision hitMapWorld = { 0 };
+Vector3 selectionRectPos = { 0 };
+
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-
-Entity entities[MAX_ENTITIES] = { 0 };
 
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
@@ -269,26 +271,6 @@ void InitGameplayScreen(void)
 // Gameplay Screen Update logic
 void UpdateGameplayScreen(void)
 {
-    // TODO: Update GAMEPLAY screen variables here!
-
-    // Press enter or tap to change to ENDING screen
-    if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
-    {
-        // finishScreen = 1;
-        // PlaySound(fxCoin);
-    }
-}
-
-// Gameplay Screen Draw logic
-void DrawGameplayScreen(void)
-{
-    // TODO: Draw GAMEPLAY screen here!
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), PURPLE);
-    Vector2 pos = { 20, 10 };
-    DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
-    DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
-
-    //UpdateCamera(&camera, CAMERA_THIRD_PERSON);
     UpdateGameCamera(&camera);
 
     // Level variables
@@ -301,7 +283,6 @@ void DrawGameplayScreen(void)
     float boxHeight = 0.05f;
 
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
-    RayCollision hitMapWorld = { 0 };
 
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
@@ -309,12 +290,12 @@ void DrawGameplayScreen(void)
         Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.z + boxSize };
         entities[i].boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
     }
-    
+
     hitMapWorld = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
- 
+
     float selectionRectX = floorf(hitMapWorld.point.x);
     float selectionRectZ = floorf(hitMapWorld.point.z);
-    Vector3 selectionRectPos = { selectionRectX, 0.0f, selectionRectZ };
+    selectionRectPos = (Vector3){ selectionRectX, 0.0f, selectionRectZ };
 
     if (IsMouseButtonPressed(0))
     {
@@ -344,6 +325,16 @@ void DrawGameplayScreen(void)
             selection = -1;
         }
     }
+}
+
+// Gameplay Screen Draw logic
+void DrawGameplayScreen(void)
+{
+    // TODO: Draw GAMEPLAY screen here!
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), PURPLE);
+    Vector2 pos = { 20, 10 };
+    DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
+    DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
     BeginMode3D(camera);
         for (int z = 0; z < MAP_HEIGHT; z++)
