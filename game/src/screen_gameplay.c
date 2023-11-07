@@ -28,16 +28,12 @@
 #include "rlgl.h"
 #include "raymath.h"
 #include "rcamera.h"
+
 #include "entity.h"
-#include "float.h"
+#include "level.h"
 
-void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
+void DrawQuad3D(Camera camera, Vector3 bottomLeft, Vector3 bottomRight, Vector3 topRight, Vector3 topLeft, Color tint)
 {
-    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, 0, size.y });
-    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, 0, size.y });
-    Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
-    Vector3 bottomLeft = position;
-
     rlBegin(RL_QUADS);
 
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);
@@ -59,6 +55,16 @@ void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
         rlVertex3f(topRight.x, topRight.y, topRight.z);
 
     rlEnd();
+}
+
+void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
+{
+    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, 0, size.y });
+    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, 0, size.y });
+    Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
+    Vector3 bottomLeft = position;
+
+    DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, tint);
 }
 
 void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
@@ -164,6 +170,7 @@ void DrawEntities(Entity entities[], int numEntities, Camera camera)
     }
 }
 
+
 void UpdateGameCamera(Camera* camera)
 {
     Vector2 mousePositionDelta = GetMouseDelta();
@@ -233,13 +240,30 @@ void UpdateGameCamera(Camera* camera)
 
 static int framesCounter = 0;
 static int finishScreen = 0;
-static int tileMap[MAP_HEIGHT][MAP_WIDTH];
+
+static Tile tileMap[MAP_HEIGHT][MAP_WIDTH];
+static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
 
 Entity entities[MAX_ENTITIES] = { 0 };
 RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
 
-static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
+void DrawTiles(Tile tileMap[MAP_HEIGHT][MAP_WIDTH], int mapHeight, int mapWidth, Camera camera)
+{
+    for (int z = 0; z < mapHeight; z++)
+    {
+        for (int x = 0; x < mapWidth; x++)
+        {
+            Tile* tile = &tileMap[z][x];
+
+            rlSetTexture(tile->texture.id);
+            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, WHITE);
+
+            rlSetTexture(0);            
+        }
+    }
+}
+
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
@@ -253,11 +277,27 @@ void InitGameplayScreen(void)
     finishScreen = 0;
 
     // Initialize Level
-    for (int y = 0; y < MAP_HEIGHT_VERTICES; y++)
+    for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
     {
         for (int x = 0; x < MAP_WIDTH_VERTICES; x++)
         {
-            depthMap[y][x] = GetRandomValue(-1, 1) / 10.0f;
+            depthMap[z][x] = GetRandomValue(-1, 1) / 5.0f;
+        }
+    }
+
+    for (int z = 0; z < MAP_HEIGHT; z++)
+    {
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            Tile* tile = &tileMap[z][x];
+
+            tile->bottomLeft = (Vector3){ (float)x, depthMap[z][x], (float)z };
+            tile->bottomRight = (Vector3){ (float)x + TILE_SIZE, depthMap[z][x + 1], (float)z };
+            tile->topRight = (Vector3){ (float)x + TILE_SIZE, depthMap[z + 1][x + 1], (float)z + TILE_SIZE };
+            tile->topLeft = (Vector3){ (float)x, depthMap[z + 1][x], (float)z + TILE_SIZE };
+
+            tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
+            tile->texture = grassTexture;
         }
     }
 
@@ -271,7 +311,6 @@ void InitGameplayScreen(void)
     entities[1].size = (Vector2){ 1.0f, 1.0f };
     entities[1].texture = orcTexture;
     entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
-
 }
 
 // Gameplay Screen Update logic
@@ -343,24 +382,8 @@ void DrawGameplayScreen(void)
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
     BeginMode3D(camera);
-        for (int z = 0; z < MAP_HEIGHT; z++)
-        {
-            for (int x = 0; x < MAP_WIDTH / 2; x++)
-            {
-                Vector3 position = { (float)x, 0, (float)z };
-                Vector2 size = { 1.0f, 1.0f };
 
-                DrawGrass(camera, grassTexture, position, size, WHITE);
-            }
-            for (int x = MAP_WIDTH / 2; x < MAP_WIDTH; x++)
-            {
-                Vector3 position = { (float)x, 1, (float)z };
-                Vector2 size = { 1.0f, 1.0f };
-
-                DrawGrass(camera, grassTexture, position, size, WHITE);
-            }
-
-        }
+        DrawTiles(tileMap, MAP_HEIGHT, MAP_WIDTH, camera);
 
         for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
         {
@@ -380,6 +403,7 @@ void DrawGameplayScreen(void)
         }
 
         DrawEntities(entities, MAX_ENTITIES, camera);
+        
 
     EndMode3D();
 
