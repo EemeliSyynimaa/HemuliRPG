@@ -225,14 +225,17 @@ void UpdateGameCamera(Camera* camera)
 #define MAP_WIDTH 20
 #define MAP_HEIGHT 15
 
-#define TILE_WIDTH 32
-#define TILE_HEIGHT 32
+#define MAP_HEIGHT_VERTICES MAP_HEIGHT + 1
+#define MAP_WIDTH_VERTICES MAP_WIDTH + 1
+#define TILE_SIZE 1
 
 #define MAX_ENTITIES 2
 
 static int framesCounter = 0;
 static int finishScreen = 0;
 static int tileMap[MAP_HEIGHT][MAP_WIDTH];
+
+static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
@@ -247,14 +250,16 @@ void InitGameplayScreen(void)
     framesCounter = 0;
     finishScreen = 0;
 
-    for (int y = 0; y < MAP_HEIGHT; y++)
+    // Initialize Level
+    for (int y = 0; y < MAP_HEIGHT_VERTICES; y++)
     {
-        for (int x = 0; x < MAP_WIDTH; x++)
+        for (int x = 0; x < MAP_WIDTH_VERTICES; x++)
         {
-            tileMap[y][x] = GetRandomValue(0, 1);
+            depthMap[y][x] = GetRandomValue(-1, 1) / 10.0f;
         }
     }
 
+    // Initialize Entities
     entities[0].position = (Vector3){ 1.0f, 0.0f, 1.0f };
     entities[0].size = (Vector2){ 1.0f, 1.0f };
     entities[0].texture = orcTexture;
@@ -264,6 +269,7 @@ void InitGameplayScreen(void)
     entities[1].size = (Vector2){ 1.0f, 1.0f };
     entities[1].texture = orcTexture;
     entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
+
 }
 
 // Gameplay Screen Update logic
@@ -348,12 +354,29 @@ void DrawGameplayScreen(void)
     BeginMode3D(camera);
         for (int z = 0; z < MAP_HEIGHT; z++)
         {
-            for (int x = 0; x < MAP_WIDTH; x++)
+            for (int x = 0; x < MAP_WIDTH / 2; x++)
             {
                 Vector3 position = { (float)x, 0, (float)z };
                 Vector2 size = { 1.0f, 1.0f };
 
                 DrawGrass(camera, grassTexture, position, size, WHITE);
+            }
+            for (int x = MAP_WIDTH / 2; x < MAP_WIDTH; x++)
+            {
+                Vector3 position = { (float)x, 1, (float)z };
+                Vector2 size = { 1.0f, 1.0f };
+
+                DrawGrass(camera, grassTexture, position, size, WHITE);
+            }
+
+        }
+
+        for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
+        {
+            for (int x = 0; x < MAP_WIDTH_VERTICES; x++)
+            {
+                Vector3 position = { (float)x, depthMap[z][x], (float)z };
+                DrawCube(position, 0.05f, 0.05f, 0.05f, BLACK);
             }
         }
 
