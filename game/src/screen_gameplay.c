@@ -257,7 +257,7 @@ void DrawTiles(Tile tileMap[MAP_HEIGHT][MAP_WIDTH], int mapHeight, int mapWidth,
             Tile* tile = &tileMap[z][x];
 
             rlSetTexture(tile->texture.id);
-            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, WHITE);
+            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, (z*mapHeight+x)%2?WHITE:BLUE);
 
             rlSetTexture(0);            
         }
@@ -340,7 +340,7 @@ void UpdateGameplayScreen(void)
 
     float selectionRectX = floorf(hitMapWorld.point.x);
     float selectionRectZ = floorf(hitMapWorld.point.z);
-    selectionRectPos = (Vector3){ selectionRectX, 0.0f, selectionRectZ };
+    selectionRectPos = (Vector3){ selectionRectX, tileMap[(int)selectionRectZ][(int)selectionRectX].entityPos, selectionRectZ};
 
     if (IsMouseButtonPressed(0))
     {
@@ -399,7 +399,9 @@ void DrawGameplayScreen(void)
         if (hitMapWorld.hit)
         {
             Color color = { WHITE.r, WHITE.g, WHITE.b, 96 };
-            DrawRectangle3D(camera, selectionRectPos, (Vector2) { 1.0f, 1.0f }, color);
+            Tile* tile = &tileMap[(int)selectionRectPos.z][(int)selectionRectPos.x];
+
+            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, color);
         }
 
         DrawEntities(entities, MAX_ENTITIES, camera);
