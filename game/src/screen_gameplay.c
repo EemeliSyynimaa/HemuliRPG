@@ -129,17 +129,18 @@ void DrawEntities(Entity entities[], int numEntities, int selected, Camera camer
 
     for (int i = 0; i < numEntities - 1; i++)
     {
-        float distanceA = Vector3Distance(entities[i].position, camera.position);
+        float distanceA = Vector3Distance(entities[renderQueue[i]].position, camera.position);
 
         for (int j = i + 1; j < numEntities; j++)
         {
-            float distanceB = Vector3Distance(entities[j].position, camera.position);
+            float distanceB = Vector3Distance(entities[renderQueue[j]].position, camera.position);
 
             if (distanceA < distanceB)
             {
                 int temp = renderQueue[i];
                 renderQueue[i] = renderQueue[j];
                 renderQueue[j] = temp;
+                distanceA = distanceB;
             }
         }
     }
