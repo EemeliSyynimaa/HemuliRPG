@@ -32,6 +32,18 @@
 #include "entity.h"
 #include "level.h"
 
+//----------------------------------------------------------------------------------
+// Module Variables Definition (local)
+//----------------------------------------------------------------------------------
+#define MAP_WIDTH 20
+#define MAP_HEIGHT 15
+
+#define MAP_HEIGHT_VERTICES MAP_HEIGHT + 1
+#define MAP_WIDTH_VERTICES MAP_WIDTH + 1
+#define TILE_SIZE 1
+
+#define MAX_ENTITIES 10
+
 void DrawQuad3D(Camera camera, Vector3 bottomLeft, Vector3 bottomRight, Vector3 topRight, Vector3 topLeft, Color tint)
 {
     rlBegin(RL_QUADS);
@@ -65,13 +77,6 @@ void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
     Vector3 bottomLeft = position;
 
     DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, tint);
-}
-
-void DrawGrass(Camera camera, Texture2D texture, Vector3 position, Vector2 size, Color tint)
-{
-    rlSetTexture(texture.id);
-    DrawRectangle3D(camera, position, size, tint);
-    rlSetTexture(0);
 }
 
 void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
@@ -112,27 +117,9 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
-// TODO WHERE TO PUT THIS
-int selection = -1;
-
-void DrawEntity(Entity entity, Camera camera)
+void DrawEntities(Entity entities[], int numEntities, int selected, Camera camera)
 {
-    Vector3 up = { 0.0f, -1.0f, 0.0f };
-    Vector2 origin = Vector2Zero();
-    float rotation = 0.0f;
-    Color tint = WHITE;
-
-    // Render separate from map position.
-    entity.position.x += 0.5f;
-    entity.position.y += -0.5f;
-    entity.position.z += 0.5f;
-
-    DrawBillboardPro(camera, entity.texture, entity.textureRect, entity.position, up, entity.size, origin, rotation, tint);
-}
-
-void DrawEntities(Entity entities[], int numEntities, Camera camera)
-{
-    // HAX: pls fix at some point
+    // HAX: pls fix at some point, MAX_ENTITIES?
     int renderQueue[128] = { 0 };
 
     for (int i = 0; i < numEntities; i++)
@@ -159,17 +146,46 @@ void DrawEntities(Entity entities[], int numEntities, Camera camera)
 
     for (int i = 0; i < numEntities; i++)
     {
-        if (renderQueue[i] == selection)
+        if (renderQueue[i] == selected)
         {
             Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
             DrawRectangle3D(camera, entities[renderQueue[i]].position, (Vector2) { 1.0f, 1.0f }, color);
         }
 
-        DrawEntity(entities[renderQueue[i]], camera);
+        Vector3 up = { 0.0f, -1.0f, 0.0f };
+        Vector2 origin = Vector2Zero();
+        float rotation = 0.0f;
+        Color tint = WHITE;
+
+        Entity* entity = &entities[renderQueue[i]];
+        Vector3 entityPos = entity->position;
+
+        // Render separate from map position.
+        entityPos.x += 0.5f;
+        entityPos.y += -0.5f;
+        entityPos.z += 0.5f;
+
+        DrawBillboardPro(camera, entity->texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
+
         DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
     }
 }
 
+void DrawTiles(Tile* tileMap, int mapHeight, int mapWidth, Camera camera)
+{
+    for (int z = 0; z < mapHeight; z++)
+    {
+        for (int x = 0; x < mapWidth; x++)
+        {
+            Tile* tile = &tileMap[z * mapWidth + x];
+
+            rlSetTexture(tile->texture.id);
+            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, (z * mapHeight + x) % 2 ? WHITE : BLUE);
+
+            rlSetTexture(0);
+        }
+    }
+}
 
 void UpdateGameCamera(Camera* camera)
 {
@@ -227,16 +243,8 @@ void UpdateGameCamera(Camera* camera)
 }
 
 //----------------------------------------------------------------------------------
-// Module Variables Definition (local)
+// Gameplay Screen Variables Definition
 //----------------------------------------------------------------------------------
-#define MAP_WIDTH 20
-#define MAP_HEIGHT 15
-
-#define MAP_HEIGHT_VERTICES MAP_HEIGHT + 1
-#define MAP_WIDTH_VERTICES MAP_WIDTH + 1
-#define TILE_SIZE 1
-
-#define MAX_ENTITIES 2
 
 static int framesCounter = 0;
 static int finishScreen = 0;
@@ -248,26 +256,27 @@ Entity entities[MAX_ENTITIES] = { 0 };
 RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
 
-void DrawTiles(Tile tileMap[MAP_HEIGHT][MAP_WIDTH], int mapHeight, int mapWidth, Camera camera)
-{
-    for (int z = 0; z < mapHeight; z++)
-    {
-        for (int x = 0; x < mapWidth; x++)
-        {
-            Tile* tile = &tileMap[z][x];
-
-            rlSetTexture(tile->texture.id);
-            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, (z*mapHeight+x)%2?WHITE:BLUE);
-
-            rlSetTexture(0);            
-        }
-    }
-}
-
+int selection = -1;
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
+void CreateOrc(int entityIndex)
+{
+    entities[entityIndex].position = (Vector3){ 1.0f, 0.0f, 1.0f + entityIndex};
+    entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
+    entities[entityIndex].texture = orcTexture;
+    entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
+}
+
+void CreateWizard(int entityIndex)
+{
+    entities[entityIndex].position = (Vector3){ 10.0f, 0.0f, 1.0f + entityIndex };
+    entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
+    entities[entityIndex].texture = wizardTexture;
+    entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)wizardTexture.width, (float)wizardTexture.height };
+}
+
 
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
@@ -302,15 +311,14 @@ void InitGameplayScreen(void)
     }
 
     // Initialize Entities
-    entities[0].position = (Vector3){ 1.0f, 0.0f, 1.0f };
-    entities[0].size = (Vector2){ 1.0f, 1.0f };
-    entities[0].texture = orcTexture;
-    entities[0].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
-
-    entities[1].position = (Vector3){ 4.0f, 0.0f, 7.0f };
-    entities[1].size = (Vector2){ 1.0f, 1.0f };
-    entities[1].texture = orcTexture;
-    entities[1].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
+    for (int i = 0; i < MAX_ENTITIES / 2; i++)
+    {
+        CreateOrc(i);
+    }    
+    for (int i = MAX_ENTITIES / 2; i < MAX_ENTITIES; i++)
+    {
+        CreateWizard(i);
+    }
 }
 
 // Gameplay Screen Update logic
@@ -376,25 +384,15 @@ void UpdateGameplayScreen(void)
 void DrawGameplayScreen(void)
 {
     // TODO: Draw GAMEPLAY screen here!
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), PURPLE);
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
     BeginMode3D(camera);
 
-        DrawTiles(tileMap, MAP_HEIGHT, MAP_WIDTH, camera);
-
-        for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
-        {
-            for (int x = 0; x < MAP_WIDTH_VERTICES; x++)
-            {
-                Vector3 position = { (float)x, depthMap[z][x], (float)z };
-                DrawCube(position, 0.05f, 0.05f, 0.05f, BLACK);
-            }
-        }
-
-        DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1);
+        DrawTiles(&tileMap[0][0], MAP_HEIGHT, MAP_WIDTH, camera);
+        //DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1);
 
         if (hitMapWorld.hit)
         {
@@ -404,7 +402,7 @@ void DrawGameplayScreen(void)
             DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, color);
         }
 
-        DrawEntities(entities, MAX_ENTITIES, camera);
+        DrawEntities(entities, MAX_ENTITIES, selection, camera);
         
 
     EndMode3D();
