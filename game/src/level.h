@@ -18,4 +18,13 @@ typedef struct Tile
 
 } Tile;
 
+typedef struct SpawnZone
+{
+	Tile tiles[128];
+	
+	int playerID;
+	int numTiles;
+
+} SpawnZone;
+
 #endif

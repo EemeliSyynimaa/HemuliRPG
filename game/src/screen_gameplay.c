@@ -36,13 +36,14 @@
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
 #define MAP_WIDTH 20
-#define MAP_HEIGHT 15
+#define MAP_HEIGHT 16
 
 #define MAP_HEIGHT_VERTICES MAP_HEIGHT + 1
 #define MAP_WIDTH_VERTICES MAP_WIDTH + 1
 #define TILE_SIZE 1
 
-#define MAX_ENTITIES 10
+#define MAX_ENTITIES 24
+#define SPAWN_ZONES 2        // MAP DATA KNOWS HOW MANY ZONES.
 
 void DrawQuad3D(Camera camera, Vector3 bottomLeft, Vector3 bottomRight, Vector3 topRight, Vector3 topLeft, Color tint)
 {
@@ -252,8 +253,11 @@ static int finishScreen = 0;
 
 static Tile tileMap[MAP_HEIGHT][MAP_WIDTH];
 static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
+static SpawnZone spawnZones[SPAWN_ZONES];
 
 Entity entities[MAX_ENTITIES] = { 0 };
+int numEntities = 0;
+
 RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
 
@@ -262,22 +266,25 @@ int selection = -1;
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void CreateOrc(int entityIndex)
+void SpawnOrc(int entityIndex, Vector3 spawnPosition)
 {
-    entities[entityIndex].position = (Vector3){ 1.0f, 0.0f, 1.0f + entityIndex};
+    entities[entityIndex].position = spawnPosition;
     entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
     entities[entityIndex].texture = orcTexture;
     entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
+
+    numEntities++;
 }
 
-void CreateWizard(int entityIndex)
+void SpawnWizard(int entityIndex, Vector3 spawnPosition)
 {
-    entities[entityIndex].position = (Vector3){ 10.0f, 0.0f, 1.0f + entityIndex };
+    entities[entityIndex].position = spawnPosition;
     entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
     entities[entityIndex].texture = wizardTexture;
     entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)wizardTexture.width, (float)wizardTexture.height };
-}
 
+    numEntities++;
+}
 
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
@@ -311,14 +318,38 @@ void InitGameplayScreen(void)
         }
     }
 
-    // Initialize Entities
-    for (int i = 0; i < MAX_ENTITIES / 2; i++)
+    for (int i = 0; i < SPAWN_ZONES; i++)
     {
-        CreateOrc(i);
+        spawnZones[i].playerID = i;
+        spawnZones[i].numTiles = 8;
+
+        for (int j = 0; j < spawnZones[i].numTiles; j++)
+        {
+            spawnZones[i].tiles[j] = tileMap[j + 4][i * (MAP_WIDTH - 1)];
+        }
+    }
+
+    // Initialize and spawn Entities
+
+    int entityIndex = 0;
+
+    for (int i = 0; i < spawnZones[0].numTiles; i++)
+    {
+        Vector3 spawnPosition = { 0 };
+        spawnPosition.x = spawnZones[0].tiles[i].bottomLeft.x;
+        spawnPosition.z = spawnZones[0].tiles[i].bottomLeft.z;
+        spawnPosition.y = spawnZones[0].tiles[i].entityPos;
+
+        SpawnWizard(entityIndex++, spawnPosition);
     }    
-    for (int i = MAX_ENTITIES / 2; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < spawnZones[1].numTiles; i++)
     {
-        CreateWizard(i);
+        Vector3 spawnPosition = { 0 };
+        spawnPosition.x = spawnZones[1].tiles[i].bottomLeft.x;
+        spawnPosition.z = spawnZones[1].tiles[i].bottomLeft.z;
+        spawnPosition.y = spawnZones[1].tiles[i].entityPos;
+
+        SpawnOrc(entityIndex++, spawnPosition);
     }
 }
 
@@ -338,7 +369,7 @@ void UpdateGameplayScreen(void)
 
     Ray mouseRay = GetMouseRay(GetMousePosition(), camera);
 
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < numEntities; i++)
     {
         Vector3 orcBoxMin = { entities[i].position.x, entities[i].position.y - boxHeight, entities[i].position.z };
         Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.z + boxSize };
@@ -355,7 +386,7 @@ void UpdateGameplayScreen(void)
     {
         bool entityPicked = false;
 
-        for (int i = 0; i < MAX_ENTITIES; i++)
+        for (int i = 0; i < numEntities; i++)
         {
             RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
 
@@ -403,7 +434,7 @@ void DrawGameplayScreen(void)
             DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, color);
         }
 
-        DrawEntities(entities, MAX_ENTITIES, selection, camera);
+        DrawEntities(entities, numEntities, selection, camera);
         
 
     EndMode3D();
