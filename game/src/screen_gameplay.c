@@ -118,7 +118,7 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
-void DrawEntities(Entity entities[], int numEntities, int selected, Camera camera)
+void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int currentTurnTeamID, Camera camera)
 {
     // HAX: pls fix at some point, MAX_ENTITIES?
     int renderQueue[128] = { 0 };
@@ -148,7 +148,7 @@ void DrawEntities(Entity entities[], int numEntities, int selected, Camera camer
 
     for (int i = 0; i < numEntities; i++)
     {
-        if (renderQueue[i] == selected)
+        if (renderQueue[i] == selectedUnitID)
         {
             Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
             DrawRectangle3D(camera, entities[renderQueue[i]].position, (Vector2) { 1.0f, 1.0f }, color);
@@ -169,7 +169,10 @@ void DrawEntities(Entity entities[], int numEntities, int selected, Camera camer
 
         DrawBillboardPro(camera, entity->texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
 
-        DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
+        if (entities[renderQueue[i]].teamID == currentTurnTeamID)
+        {
+            DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
+        }
     }
 }
 
@@ -262,6 +265,7 @@ RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
 
 int selection = -1;
+int currentTurnTeamID = 1;
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
@@ -272,6 +276,7 @@ void SpawnOrc(int entityIndex, Vector3 spawnPosition)
     entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
     entities[entityIndex].texture = orcTexture;
     entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
+    entities[entityIndex].teamID = 1;
 
     numEntities++;
 }
@@ -282,6 +287,7 @@ void SpawnWizard(int entityIndex, Vector3 spawnPosition)
     entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
     entities[entityIndex].texture = wizardTexture;
     entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)wizardTexture.width, (float)wizardTexture.height };
+    entities[entityIndex].teamID = 2;
 
     numEntities++;
 }
@@ -390,7 +396,7 @@ void UpdateGameplayScreen(void)
         {
             RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
 
-            if (hitMapEntity.hit)
+            if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID)
             {
                 hitMapEntity.point = entities[i].position;
                 DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
@@ -407,7 +413,9 @@ void UpdateGameplayScreen(void)
             Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
             Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
             entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+            
             selection = -1;
+            currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
         }
     }
 }
@@ -417,9 +425,6 @@ void DrawGameplayScreen(void)
 {
     // TODO: Draw GAMEPLAY screen here!
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
-    Vector2 pos = { 20, 10 };
-    DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
-    DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
 
     BeginMode3D(camera);
 
@@ -434,7 +439,7 @@ void DrawGameplayScreen(void)
             DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, color);
         }
 
-        DrawEntities(entities, numEntities, selection, camera);
+        DrawEntities(entities, numEntities, selection, currentTurnTeamID, camera);
         
 
     EndMode3D();
@@ -444,6 +449,10 @@ void DrawGameplayScreen(void)
         DrawText(TextFormat("HIT %.3f | %.3f | %.3f", hitMapWorld.point.x, hitMapWorld.point.y, hitMapWorld.point.z), 130, 200, 20, MAROON);
         //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
     }
+
+    Vector2 pos = { 20, 10 };
+    DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
+    DrawText(TextFormat("PLAYER %d", currentTurnTeamID), 130, 220, 20, MAROON);
 }
 
 // Gameplay Screen Unload logic
