@@ -254,7 +254,7 @@ void UpdateGameCamera(Camera* camera)
 static int framesCounter = 0;
 static int finishScreen = 0;
 
-static Tile tileMap[MAP_HEIGHT][MAP_WIDTH];
+static Tile tileMap[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
 static SpawnZone spawnZones[SPAWN_ZONES];
 
@@ -292,6 +292,39 @@ void SpawnWizard(int entityIndex, Vector3 spawnPosition)
     numEntities++;
 }
 
+void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture)
+{
+    int numTiles = spawnZone->numTiles;
+
+    for (int i = 0; i < numTiles; i++)
+    {
+        int randomValue = GetRandomValue(0, numTiles - 1);
+        if (spawnZone->tiles[randomValue].entity == NULL)
+        {
+            Vector3 spawnPosition = { 0 };
+            Tile* spawnTile = &spawnZone->tiles[randomValue];
+
+            spawnPosition.x = spawnTile->bottomLeft.x;
+            spawnPosition.z = spawnTile->bottomLeft.z;
+            spawnPosition.y = spawnTile->entityPos;
+
+            Entity* entity = &entities[numEntities];
+            entity->position = spawnPosition;
+            entity->size = (Vector2){ 1.0f, 1.0f };
+            entity->texture = *texture;
+            entity->textureRect = (Rectangle){ 0.0f, 0.0f, (float)(*texture).width, (float)(*texture).height };
+            entity->teamID = spawnZone->playerID;
+
+            numEntities++;
+
+            entity->tile = spawnTile;
+            spawnTile->entity = entity;
+
+            return;
+        }
+    }
+}
+
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
 {
@@ -321,12 +354,15 @@ void InitGameplayScreen(void)
 
             tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
             tile->texture = grassTexture;
+            tile->entity = NULL;
         }
     }
 
+    // TODO: FIX TEAM ID / SPAWN ID STUFF
+    // TODO: SELECT SPAWN TILE RANDOMLY INSTEAD OF ALL
     for (int i = 0; i < SPAWN_ZONES; i++)
     {
-        spawnZones[i].playerID = i;
+        spawnZones[i].playerID = i + 1;
         spawnZones[i].numTiles = 8;
 
         for (int j = 0; j < spawnZones[i].numTiles; j++)
@@ -337,26 +373,13 @@ void InitGameplayScreen(void)
 
     // Initialize and spawn Entities
 
-    int entityIndex = 0;
+    SpawnEntity(&spawnZones[0], &wizardTexture);
+    SpawnEntity(&spawnZones[0], &wizardTexture);
+    SpawnEntity(&spawnZones[0], &wizardTexture);
 
-    for (int i = 0; i < spawnZones[0].numTiles; i++)
-    {
-        Vector3 spawnPosition = { 0 };
-        spawnPosition.x = spawnZones[0].tiles[i].bottomLeft.x;
-        spawnPosition.z = spawnZones[0].tiles[i].bottomLeft.z;
-        spawnPosition.y = spawnZones[0].tiles[i].entityPos;
-
-        SpawnWizard(entityIndex++, spawnPosition);
-    }    
-    for (int i = 0; i < spawnZones[1].numTiles; i++)
-    {
-        Vector3 spawnPosition = { 0 };
-        spawnPosition.x = spawnZones[1].tiles[i].bottomLeft.x;
-        spawnPosition.z = spawnZones[1].tiles[i].bottomLeft.z;
-        spawnPosition.y = spawnZones[1].tiles[i].entityPos;
-
-        SpawnOrc(entityIndex++, spawnPosition);
-    }
+    SpawnEntity(&spawnZones[1], &orcTexture);
+    SpawnEntity(&spawnZones[1], &orcTexture);
+    SpawnEntity(&spawnZones[1], &orcTexture);
 }
 
 // Gameplay Screen Update logic
@@ -386,7 +409,10 @@ void UpdateGameplayScreen(void)
 
     float selectionRectX = floorf(hitMapWorld.point.x);
     float selectionRectZ = floorf(hitMapWorld.point.z);
-    selectionRectPos = (Vector3){ selectionRectX, tileMap[(int)selectionRectZ][(int)selectionRectX].entityPos, selectionRectZ};
+
+
+    Tile* selectionTile = &tileMap[(int)selectionRectZ][(int)selectionRectX];
+    selectionRectPos = (Vector3){ selectionRectX, selectionTile->entityPos, selectionRectZ};
 
     if (IsMouseButtonPressed(0))
     {
@@ -406,13 +432,17 @@ void UpdateGameplayScreen(void)
             }
         }
 
-        if (!entityPicked && selection != -1 && hitMapWorld.hit)
+        if (!entityPicked && selection != -1 && hitMapWorld.hit && selectionTile->entity == NULL)
         {
             Entity* entity = &entities[selection];
             entity->position = selectionRectPos;
             Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
             Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
             entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+
+            entity->tile->entity = NULL;
+            entity->tile = selectionTile;
+            selectionTile->entity = entity;
             
             selection = -1;
             currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;

@@ -3,6 +3,8 @@
 
 #include "raylib.h"
 
+typedef struct Tile Tile;
+
 typedef struct Entity
 {
 	// Rendering variables
@@ -15,6 +17,8 @@ typedef struct Entity
 	BoundingBox boundingBox;
 
 	// Gameplay variables
+
+	Tile* tile;
 
 	int teamID;
 

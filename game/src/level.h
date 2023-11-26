@@ -3,6 +3,8 @@
 
 #include "raylib.h"
 
+typedef struct Entity Entity;
+
 typedef struct Tile
 {
 	Vector3 bottomLeft;
@@ -11,10 +13,11 @@ typedef struct Tile
 	Vector3 topRight;
 
 	Texture texture;
-
 	float entityPos;
 
-	// Gameplay stuff here?
+	// Gameplay variables
+
+	Entity* entity;
 
 } Tile;
 
