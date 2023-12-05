@@ -151,7 +151,13 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
         if (renderQueue[i] == selectedUnitID)
         {
             Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
-            DrawRectangle3D(camera, entities[renderQueue[i]].position, (Vector2) { 1.0f, 1.0f }, color);
+
+            Vector3 bottomLeft = entities[renderQueue[i]].tile->bottomLeft;
+            Vector3 topLeft = entities[renderQueue[i]].tile->topLeft;
+            Vector3 bottomRight = entities[renderQueue[i]].tile->bottomRight;
+            Vector3 topRight = entities[renderQueue[i]].tile->topRight;
+
+            DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
 
         Vector3 up = { 0.0f, -1.0f, 0.0f };
@@ -189,6 +195,27 @@ void DrawTiles(Tile* tileMap, int mapHeight, int mapWidth, Camera camera)
 
             rlSetTexture(0);
         }
+    }
+}
+
+void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles)
+{
+    Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
+    
+    // FIX THIS
+    rlSetTexture(blankTexture.id);
+
+    for (int i = 0; i < numSelectionTiles; i++)
+    {
+        Tile* tile = selectionTileMap[i];
+        float offset = 0.02f;
+
+        DrawQuad3D(camera, 
+            Vector3Add(tile->bottomLeft, (Vector3){ offset, -0.01f, offset}),
+            Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset}),
+            Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
+            Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
+            color);
     }
 }
 
@@ -263,6 +290,8 @@ int numEntities = 0;
 
 RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
+Tile* selectionTiles[MAP_HEIGHT * MAP_WIDTH] = { 0 };
+int numSelectionTiles = 0;
 
 int selection = -1;
 int currentTurnTeamID = 1;
@@ -270,29 +299,7 @@ int currentTurnTeamID = 1;
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnOrc(int entityIndex, Vector3 spawnPosition)
-{
-    entities[entityIndex].position = spawnPosition;
-    entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
-    entities[entityIndex].texture = orcTexture;
-    entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)orcTexture.width, (float)orcTexture.height };
-    entities[entityIndex].teamID = 1;
-
-    numEntities++;
-}
-
-void SpawnWizard(int entityIndex, Vector3 spawnPosition)
-{
-    entities[entityIndex].position = spawnPosition;
-    entities[entityIndex].size = (Vector2){ 1.0f, 1.0f };
-    entities[entityIndex].texture = wizardTexture;
-    entities[entityIndex].textureRect = (Rectangle){ 0.0f, 0.0f, (float)wizardTexture.width, (float)wizardTexture.height };
-    entities[entityIndex].teamID = 2;
-
-    numEntities++;
-}
-
-void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture)
+void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -314,6 +321,7 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture)
             entity->texture = *texture;
             entity->textureRect = (Rectangle){ 0.0f, 0.0f, (float)(*texture).width, (float)(*texture).height };
             entity->teamID = spawnZone->playerID;
+            entity->speed = speed;
 
             numEntities++;
 
@@ -323,6 +331,44 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture)
             return;
         }
     }
+}
+
+void SelectEntity(int entityIndex)
+{
+    numSelectionTiles = 0;
+    selection = entityIndex;
+    Entity* entity = &entities[selection];
+
+    for (int z = 0; z < MAP_HEIGHT; z++)
+    {
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            Tile* tile = &tileMap[z][x];
+            Vector2 tileCenterPos = { 0 };
+            tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
+            tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
+
+            float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
+
+            if (tileDistance <= entity->speed)
+            {
+                selectionTiles[numSelectionTiles] = tile;
+                numSelectionTiles++;
+            }
+        }
+    }
+}
+
+bool IsTileSelectable(Tile* tile)
+{
+    for (int i = 0; i < numSelectionTiles; i++)
+    {
+        if (tile == selectionTiles[i])
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Gameplay Screen Initialization logic
@@ -355,6 +401,7 @@ void InitGameplayScreen(void)
             tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
             tile->texture = grassTexture;
             tile->entity = NULL;
+            tile->walkable = true;
         }
     }
 
@@ -373,13 +420,13 @@ void InitGameplayScreen(void)
 
     // Initialize and spawn Entities
 
-    SpawnEntity(&spawnZones[0], &wizardTexture);
-    SpawnEntity(&spawnZones[0], &wizardTexture);
-    SpawnEntity(&spawnZones[0], &wizardTexture);
+    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
 
-    SpawnEntity(&spawnZones[1], &orcTexture);
-    SpawnEntity(&spawnZones[1], &orcTexture);
-    SpawnEntity(&spawnZones[1], &orcTexture);
+    SpawnEntity(&spawnZones[1], &orcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, 2);
 }
 
 // Gameplay Screen Update logic
@@ -410,7 +457,6 @@ void UpdateGameplayScreen(void)
     float selectionRectX = floorf(hitMapWorld.point.x);
     float selectionRectZ = floorf(hitMapWorld.point.z);
 
-
     Tile* selectionTile = &tileMap[(int)selectionRectZ][(int)selectionRectX];
     selectionRectPos = (Vector3){ selectionRectX, selectionTile->entityPos, selectionRectZ};
 
@@ -427,12 +473,12 @@ void UpdateGameplayScreen(void)
                 hitMapEntity.point = entities[i].position;
                 DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
                 //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
-                selection = i;
                 entityPicked = true;
+                SelectEntity(i);
             }
         }
 
-        if (!entityPicked && selection != -1 && hitMapWorld.hit && selectionTile->entity == NULL)
+        if (!entityPicked && selection != -1 && hitMapWorld.hit && selectionTile->entity == NULL && IsTileSelectable(selectionTile))
         {
             Entity* entity = &entities[selection];
             entity->position = selectionRectPos;
@@ -443,6 +489,8 @@ void UpdateGameplayScreen(void)
             entity->tile->entity = NULL;
             entity->tile = selectionTile;
             selectionTile->entity = entity;
+
+            numSelectionTiles = 0;
             
             selection = -1;
             currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
@@ -461,12 +509,26 @@ void DrawGameplayScreen(void)
         DrawTiles(&tileMap[0][0], MAP_HEIGHT, MAP_WIDTH, camera);
         //DrawGameGrid(MAP_WIDTH, MAP_HEIGHT, 1);
 
+        if (selection != -1)
+        {
+            DrawSelectionArea(selectionTiles, numSelectionTiles);
+        }
+
         if (hitMapWorld.hit)
         {
             Color color = { WHITE.r, WHITE.g, WHITE.b, 96 };
             Tile* tile = &tileMap[(int)selectionRectPos.z][(int)selectionRectPos.x];
 
-            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, color);
+            Vector3 bottomLeft = tile->bottomLeft;
+            bottomLeft.y -= 0.02f;
+            Vector3 bottomRight = tile->bottomRight;
+            bottomRight.y -= 0.02f;
+            Vector3 topRight = tile->topRight;
+            topRight.y -= 0.02f;
+            Vector3 topLeft = tile->topLeft;
+            topLeft.y -= 0.02f;
+
+            DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
 
         DrawEntities(entities, numEntities, selection, currentTurnTeamID, camera);

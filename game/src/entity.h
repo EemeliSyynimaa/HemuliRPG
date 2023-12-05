@@ -21,6 +21,7 @@ typedef struct Entity
 	Tile* tile;
 
 	int teamID;
+	int speed;
 
 } Entity;
 

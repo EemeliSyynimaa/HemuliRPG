@@ -18,6 +18,7 @@ typedef struct Tile
 	// Gameplay variables
 
 	Entity* entity;
+	bool walkable;
 
 } Tile;
 
