@@ -20,6 +20,8 @@ typedef struct Entity
 
 	Tile* tile;
 
+	bool isActive;
+	bool isAlive;
 	int teamID;
 	int speed;
 

@@ -148,6 +148,15 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
 
     for (int i = 0; i < numEntities; i++)
     {
+        Entity* entity = &entities[renderQueue[i]];
+        Vector3 entityPos = entity->position;
+
+        // Don't render deactivated units
+        if (entity->isActive == false)
+        {
+            continue;
+        }
+
         if (renderQueue[i] == selectedUnitID)
         {
             Color color = { PURPLE.r, PURPLE.g, PURPLE.b, 96 };
@@ -168,8 +177,7 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
         float rotation = 0.0f;
         Color tint = WHITE;
 
-        Entity* entity = &entities[renderQueue[i]];
-        Vector3 entityPos = entity->position;
+
 
         // Render separate from map position.
         entityPos.x += 0.5f;
@@ -328,6 +336,10 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
             spawnPosition.y = spawnTile->entityPos;
 
             Entity* entity = &entities[numEntities];
+
+            entity->isActive = true;
+            entity->isAlive = true;
+
             entity->position = spawnPosition;
             entity->size = (Vector2){ 1.0f, 1.0f };
             entity->texture = *texture;
@@ -341,6 +353,22 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
             spawnTile->entity = entity;
 
             return;
+        }
+    }
+}
+
+void RemoveEntity(int entityIndex)
+{
+    if (entityIndex >= 0 && entityIndex < MAX_ENTITIES)
+    {
+        Entity* entity = &entities[entityIndex];
+
+        entity->tile->entity = NULL;
+        entity->isActive = false;
+
+        if (selection == entityIndex)
+        {
+            selection = -1;
         }
     }
 }
@@ -478,15 +506,18 @@ void UpdateGameplayScreen(void)
 
         for (int i = 0; i < numEntities; i++)
         {
-            RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
-
-            if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID)
+            if (entities[i].isActive)
             {
-                hitMapEntity.point = entities[i].position;
-                DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
-                //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
-                entityPicked = true;
-                SelectEntity(i);
+                RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
+
+                if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID)
+                {
+                    hitMapEntity.point = entities[i].position;
+                    DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
+                    //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+                    entityPicked = true;
+                    SelectEntity(i);
+                }
             }
         }
 
@@ -508,6 +539,8 @@ void UpdateGameplayScreen(void)
             currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
         }
     }
+
+    if (IsKeyPressed(KEY_K)) RemoveEntity(selection);
 }
 
 // Gameplay Screen Draw logic
