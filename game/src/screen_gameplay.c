@@ -150,12 +150,15 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
     {
         if (renderQueue[i] == selectedUnitID)
         {
-            Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
+            Color color = { PURPLE.r, PURPLE.g, PURPLE.b, 96 };
 
             Vector3 bottomLeft = entities[renderQueue[i]].tile->bottomLeft;
             Vector3 topLeft = entities[renderQueue[i]].tile->topLeft;
             Vector3 bottomRight = entities[renderQueue[i]].tile->bottomRight;
             Vector3 topRight = entities[renderQueue[i]].tile->topRight;
+
+            // FIX THIS
+            rlSetTexture(blankTexture.id);
 
             DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
@@ -208,14 +211,18 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles)
     for (int i = 0; i < numSelectionTiles; i++)
     {
         Tile* tile = selectionTileMap[i];
-        float offset = 0.02f;
 
-        DrawQuad3D(camera, 
-            Vector3Add(tile->bottomLeft, (Vector3){ offset, -0.01f, offset}),
-            Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset}),
-            Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
-            Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
-            color);
+        if (tile->entity == NULL)
+        {
+            float offset = 0.02f;
+
+            DrawQuad3D(camera,
+                Vector3Add(tile->bottomLeft, (Vector3) { offset, -0.01f, offset }),
+                Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset }),
+                Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
+                Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
+                color);
+        }
     }
 }
 
@@ -311,10 +318,10 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
     for (int i = 0; i < numTiles; i++)
     {
         int randomValue = GetRandomValue(0, numTiles - 1);
-        if (spawnZone->tiles[randomValue].entity == NULL)
+        if (spawnZone->tiles[randomValue]->entity == NULL)
         {
             Vector3 spawnPosition = { 0 };
-            Tile* spawnTile = &spawnZone->tiles[randomValue];
+            Tile* spawnTile = spawnZone->tiles[randomValue];
 
             spawnPosition.x = spawnTile->bottomLeft.x;
             spawnPosition.z = spawnTile->bottomLeft.z;
@@ -419,7 +426,7 @@ void InitGameplayScreen(void)
 
         for (int j = 0; j < spawnZones[i].numTiles; j++)
         {
-            spawnZones[i].tiles[j] = tileMap[j + 4][i * (MAP_WIDTH - 1)];
+            spawnZones[i].tiles[j] = &tileMap[j + 4][i * (MAP_WIDTH - 1)];
         }
     }
 

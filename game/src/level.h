@@ -24,7 +24,7 @@ typedef struct Tile
 
 typedef struct SpawnZone
 {
-	Tile tiles[128];
+	Tile* tiles[128];
 	
 	int playerID;
 	int numTiles;
