@@ -175,9 +175,7 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
         Vector3 up = { 0.0f, -1.0f, 0.0f };
         Vector2 origin = Vector2Zero();
         float rotation = 0.0f;
-        Color tint = WHITE;
-
-
+        Color tint = entity->isAlive?WHITE:RED; // TODO make death animations
 
         // Render separate from map position.
         entityPos.x += 0.5f;
@@ -373,27 +371,45 @@ void RemoveEntity(int entityIndex)
     }
 }
 
+void KillEntity(int entityIndex)
+{
+    if (entityIndex >= 0 && entityIndex < MAX_ENTITIES)
+    {
+        Entity* entity = &entities[entityIndex];
+
+        entity->isAlive = false;
+
+        if (selection == entityIndex)
+        {
+            selection = -1;
+        }
+    }
+}
+
 void SelectEntity(int entityIndex)
 {
     numSelectionTiles = 0;
     selection = entityIndex;
     Entity* entity = &entities[selection];
 
-    for (int z = 0; z < MAP_HEIGHT; z++)
+    if (entity->isAlive == true)
     {
-        for (int x = 0; x < MAP_WIDTH; x++)
+        for (int z = 0; z < MAP_HEIGHT; z++)
         {
-            Tile* tile = &tileMap[z][x];
-            Vector2 tileCenterPos = { 0 };
-            tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
-            tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
-
-            float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
-
-            if (tileDistance <= entity->speed)
+            for (int x = 0; x < MAP_WIDTH; x++)
             {
-                selectionTiles[numSelectionTiles] = tile;
-                numSelectionTiles++;
+                Tile* tile = &tileMap[z][x];
+                Vector2 tileCenterPos = { 0 };
+                tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
+                tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
+
+                float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
+
+                if (tileDistance <= entity->speed)
+                {
+                    selectionTiles[numSelectionTiles] = tile;
+                    numSelectionTiles++;
+                }
             }
         }
     }
@@ -541,6 +557,7 @@ void UpdateGameplayScreen(void)
     }
 
     if (IsKeyPressed(KEY_K)) RemoveEntity(selection);
+    if (IsKeyPressed(KEY_L)) KillEntity(selection);
 }
 
 // Gameplay Screen Draw logic
