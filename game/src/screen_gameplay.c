@@ -175,14 +175,20 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
         Vector3 up = { 0.0f, -1.0f, 0.0f };
         Vector2 origin = Vector2Zero();
         float rotation = 0.0f;
-        Color tint = entity->isAlive?WHITE:RED; // TODO make death animations
+        Color tint = WHITE;
 
         // Render separate from map position.
         entityPos.x += 0.5f;
         entityPos.y += -0.5f;
         entityPos.z += 0.5f;
 
-        DrawBillboardPro(camera, entity->texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
+        Texture texture = entity->texture;
+        if (entity->isAlive == false)
+        {
+            texture = entity->deathTexture;
+        }
+
+        DrawBillboardPro(camera, texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
 
         if (entities[renderQueue[i]].teamID == currentTurnTeamID)
         {
@@ -317,7 +323,7 @@ int currentTurnTeamID = 1;
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
+void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -341,6 +347,7 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, int speed)
             entity->position = spawnPosition;
             entity->size = (Vector2){ 1.0f, 1.0f };
             entity->texture = *texture;
+            entity->deathTexture = *deathTexture;
             entity->textureRect = (Rectangle){ 0.0f, 0.0f, (float)(*texture).width, (float)(*texture).height };
             entity->teamID = spawnZone->playerID;
             entity->speed = speed;
@@ -476,13 +483,13 @@ void InitGameplayScreen(void)
 
     // Initialize and spawn Entities
 
-    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
-    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
-    SpawnEntity(&spawnZones[0], &wizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
 
-    SpawnEntity(&spawnZones[1], &orcTexture, 2);
-    SpawnEntity(&spawnZones[1], &orcTexture, 2);
-    SpawnEntity(&spawnZones[1], &orcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
 }
 
 // Gameplay Screen Update logic

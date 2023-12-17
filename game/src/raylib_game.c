@@ -29,7 +29,9 @@ Music music = { 0 };
 Sound fxCoin = { 0 };
 Texture2D grassTexture = { 0 };
 Texture2D orcTexture = { 0 };
+Texture2D deadOrcTexture = { 0 };
 Texture2D wizardTexture = { 0 };
+Texture2D deadWizardTexture = { 0 };
 Texture2D blankTexture = { 0 };
 Camera3D camera = { 0 };
 
@@ -74,7 +76,9 @@ int main(void)
     fxCoin = LoadSound("resources/coin.wav");
     grassTexture = LoadTexture("resources/grass.png");
     orcTexture = LoadTexture("resources/orc.png");
+    deadOrcTexture = LoadTexture("resources/orc_dead.png");
     wizardTexture = LoadTexture("resources/wizard.png");
+    deadWizardTexture = LoadTexture("resources/wizard_dead.png");
     blankTexture = LoadTexture("resources/blank.png");
 
     camera.position = (Vector3){ 0.0f, 0.0f, 10.0f };       // Camera position
@@ -121,7 +125,9 @@ int main(void)
     UnloadSound(fxCoin);
     UnloadTexture(grassTexture);
     UnloadTexture(orcTexture);
+    UnloadTexture(deadOrcTexture);
     UnloadTexture(wizardTexture);
+    UnloadTexture(deadWizardTexture);
     UnloadTexture(blankTexture);
 
     CloseAudioDevice();     // Close audio context

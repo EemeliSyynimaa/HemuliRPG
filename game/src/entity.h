@@ -13,6 +13,7 @@ typedef struct Entity
 	Vector3 position;
 	
 	Texture texture;
+	Texture deathTexture;
 	Rectangle textureRect;
 	BoundingBox boundingBox;
 
