@@ -72,8 +72,8 @@ void DrawQuad3D(Camera camera, Vector3 bottomLeft, Vector3 bottomRight, Vector3 
 
 void DrawRectangle3D(Camera camera, Vector3 position, Vector2 size, Color tint)
 {
-    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, 0, size.y });
-    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, 0, size.y });
+    Vector3 topLeft = Vector3Add(position, (Vector3) { 0, size.y, 0 });
+    Vector3 topRight = Vector3Add(position, (Vector3) { size.x, size.y, 0 });
     Vector3 bottomRight = Vector3Add(position, (Vector3) { size.x, 0, 0 });
     Vector3 bottomLeft = position;
 
@@ -93,8 +93,8 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
         rlColor3f(0.75f, 0.75f, 0.75f);
         rlColor3f(0.75f, 0.75f, 0.75f);
 
-        rlVertex3f((float)i * spacing, depth, (float)0.0f * spacing);
-        rlVertex3f((float)i * spacing, depth, (float)mapHeight * spacing);
+        rlVertex3f((float)i * spacing, (float)0.0f * spacing, depth);
+        rlVertex3f((float)i * spacing, (float)mapHeight * spacing, depth);
 
         // Original code.
         //rlVertex3f((float)0.0f * spacing, 0.0f, (float)i * spacing);
@@ -111,8 +111,8 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
         //rlVertex3f((float)i * spacing, 0.0f, (float)0.0f * spacing);
         //rlVertex3f((float)i * spacing, 0.0f, (float)MAP_WIDTH * spacing);
 
-        rlVertex3f((float)0.0f * spacing, depth, (float)i * spacing);
-        rlVertex3f((float)mapWidth * spacing, depth, (float)i * spacing);
+        rlVertex3f((float)0.0f * spacing, (float)i * spacing, depth);
+        rlVertex3f((float)mapWidth * spacing, (float)i * spacing, depth);
     }
 
     rlEnd();
@@ -160,7 +160,7 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
             DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
 
-        Vector3 up = { 0.0f, -1.0f, 0.0f };
+        Vector3 up = { 0.0f, 0.0f, 1.0f };
         Vector2 origin = Vector2Zero();
         float rotation = 0.0f;
         Color tint = WHITE;
@@ -170,7 +170,7 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
 
         // Render separate from map position.
         entityPos.x += 0.5f;
-        entityPos.y += -0.5f;
+        entityPos.y += 0.5f;
         entityPos.z += 0.5f;
 
         DrawBillboardPro(camera, entity->texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
@@ -184,14 +184,14 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
 
 void DrawTiles(Tile* tileMap, int mapHeight, int mapWidth, Camera camera)
 {
-    for (int z = 0; z < mapHeight; z++)
+    for (int y = 0; y < mapHeight; y++)
     {
         for (int x = 0; x < mapWidth; x++)
         {
-            Tile* tile = &tileMap[z * mapWidth + x];
+            Tile* tile = &tileMap[y * mapWidth + x];
 
             rlSetTexture(tile->texture.id);
-            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, (z * mapHeight + x) % 2 ? WHITE : BLUE);
+            DrawQuad3D(camera, tile->bottomLeft, tile->bottomRight, tile->topRight, tile->topLeft, (y * mapHeight + x) % 2 ? WHITE : BLUE);
 
             rlSetTexture(0);
         }
@@ -211,10 +211,10 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles)
         float offset = 0.02f;
 
         DrawQuad3D(camera, 
-            Vector3Add(tile->bottomLeft, (Vector3){ offset, -0.01f, offset}),
-            Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset}),
-            Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
-            Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
+            Vector3Add(tile->bottomLeft, (Vector3){ offset, offset, -0.01f }),
+            Vector3Add(tile->bottomRight, (Vector3) { -offset, offset, -0.01f }),
+            Vector3Add(tile->topRight, (Vector3) { -offset, -offset, -0.01f }),
+            Vector3Add(tile->topLeft, (Vector3) { offset, -offset, -0.01f }),
             color);
     }
 }
@@ -339,16 +339,16 @@ void SelectEntity(int entityIndex)
     selection = entityIndex;
     Entity* entity = &entities[selection];
 
-    for (int z = 0; z < MAP_HEIGHT; z++)
+    for (int y = 0; y < MAP_HEIGHT; y++)
     {
         for (int x = 0; x < MAP_WIDTH; x++)
         {
-            Tile* tile = &tileMap[z][x];
+            Tile* tile = &tileMap[y][x];
             Vector2 tileCenterPos = { 0 };
             tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
-            tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
+            tileCenterPos.y = (tile->bottomLeft.y + tile->topRight.y) / 2;
 
-            float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
+            float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.y + 0.5f }, tileCenterPos);
 
             if (tileDistance <= entity->speed)
             {
@@ -379,26 +379,26 @@ void InitGameplayScreen(void)
     finishScreen = 0;
 
     // Initialize Level
-    for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
+    for (int y = 0; y < MAP_HEIGHT_VERTICES; y++)
     {
         for (int x = 0; x < MAP_WIDTH_VERTICES; x++)
         {
-            depthMap[z][x] = GetRandomValue(-1, 1) / 5.0f;
+            depthMap[y][x] = GetRandomValue(-1, 1) / 5.0f;
         }
     }
 
-    for (int z = 0; z < MAP_HEIGHT; z++)
+    for (int y = 0; y < MAP_HEIGHT; y++)
     {
         for (int x = 0; x < MAP_WIDTH; x++)
         {
-            Tile* tile = &tileMap[z][x];
+            Tile* tile = &tileMap[y][x];
 
-            tile->bottomLeft = (Vector3){ (float)x, depthMap[z][x], (float)z };
-            tile->bottomRight = (Vector3){ (float)x + TILE_SIZE, depthMap[z][x + 1], (float)z };
-            tile->topRight = (Vector3){ (float)x + TILE_SIZE, depthMap[z + 1][x + 1], (float)z + TILE_SIZE };
-            tile->topLeft = (Vector3){ (float)x, depthMap[z + 1][x], (float)z + TILE_SIZE };
+            tile->bottomLeft = (Vector3){ (float)x, (float)y, depthMap[y][x] };
+            tile->bottomRight = (Vector3){ (float)x + TILE_SIZE, (float)y, depthMap[y][x + 1] };
+            tile->topRight = (Vector3){ (float)x + TILE_SIZE, (float)y + TILE_SIZE, depthMap[y + 1][x + 1] };
+            tile->topLeft = (Vector3){ (float)x, (float)y + TILE_SIZE, depthMap[y + 1][x] };
 
-            tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
+            tile->entityPos = (depthMap[y][x] + depthMap[y][x + 1] + depthMap[y + 1][x + 1] + depthMap[y + 1][x]) / 4;
             tile->texture = grassTexture;
             tile->entity = NULL;
             tile->walkable = true;
@@ -437,8 +437,8 @@ void UpdateGameplayScreen(void)
     // Level variables
     Vector3 bottomLeft = { 0.0f, 0.0f, 0.0f };
     Vector3 bottomRight = { MAP_WIDTH, 0.0f, 0.0f };
-    Vector3 topLeft = { 0.0f, 0.0f, MAP_HEIGHT };
-    Vector3 topRight = { MAP_WIDTH, 0.0f, MAP_HEIGHT };
+    Vector3 topLeft = { 0.0f, MAP_HEIGHT, 0.0f, };
+    Vector3 topRight = { MAP_WIDTH, MAP_HEIGHT, 0.0f };
 
     float boxSize = 1.0f;
     float boxHeight = 0.05f;
@@ -447,15 +447,15 @@ void UpdateGameplayScreen(void)
 
     for (int i = 0; i < numEntities; i++)
     {
-        Vector3 orcBoxMin = { entities[i].position.x, entities[i].position.y - boxHeight, entities[i].position.z };
-        Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.z + boxSize };
+        Vector3 orcBoxMin = { entities[i].position.x, entities[i].position.y - boxHeight, entities[i].position.y };
+        Vector3 orcBoxMax = { entities[i].position.x + boxSize, entities[i].position.y, entities[i].position.y + boxSize };
         entities[i].boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
     }
 
     hitMapWorld = GetRayCollisionQuad(mouseRay, bottomLeft, topLeft, topRight, bottomRight);
 
     float selectionRectX = floorf(hitMapWorld.point.x);
-    float selectionRectZ = floorf(hitMapWorld.point.z);
+    float selectionRectZ = floorf(hitMapWorld.point.y);
 
     Tile* selectionTile = &tileMap[(int)selectionRectZ][(int)selectionRectX];
     selectionRectPos = (Vector3){ selectionRectX, selectionTile->entityPos, selectionRectZ};
@@ -471,8 +471,8 @@ void UpdateGameplayScreen(void)
             if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID)
             {
                 hitMapEntity.point = entities[i].position;
-                DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
-                //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
+                DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.y), 130, 180, 20, MAROON);
+                //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.y);
                 entityPicked = true;
                 SelectEntity(i);
             }
@@ -482,8 +482,8 @@ void UpdateGameplayScreen(void)
         {
             Entity* entity = &entities[selection];
             entity->position = selectionRectPos;
-            Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
-            Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
+            Vector3 orcBoxMin = { entity->position.x, entity->position.y, entity->position.z - boxHeight };
+            Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y + boxSize, entity->position.z };
             entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
 
             entity->tile->entity = NULL;
@@ -517,16 +517,16 @@ void DrawGameplayScreen(void)
         if (hitMapWorld.hit)
         {
             Color color = { WHITE.r, WHITE.g, WHITE.b, 96 };
-            Tile* tile = &tileMap[(int)selectionRectPos.z][(int)selectionRectPos.x];
+            Tile* tile = &tileMap[(int)selectionRectPos.y][(int)selectionRectPos.x];
 
             Vector3 bottomLeft = tile->bottomLeft;
-            bottomLeft.y -= 0.02f;
+            bottomLeft.z -= 0.02f;
             Vector3 bottomRight = tile->bottomRight;
-            bottomRight.y -= 0.02f;
+            bottomRight.z -= 0.02f;
             Vector3 topRight = tile->topRight;
-            topRight.y -= 0.02f;
+            topRight.z -= 0.02f;
             Vector3 topLeft = tile->topLeft;
-            topLeft.y -= 0.02f;
+            topLeft.z -= 0.02f;
 
             DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
