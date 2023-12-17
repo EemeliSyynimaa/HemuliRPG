@@ -250,6 +250,11 @@ void UpdateGameCamera(Camera* camera)
             CameraPitch(camera, -mousePositionDelta.y * cameraMouseMoveSensitivity, lockView, rotateAroundTarget, rotateUp);
         }
 
+        if (IsKeyDown(KEY_LEFT_SHIFT))
+        {
+            cameraMoveSpeed = 0.24f;
+        }
+
         // Keyboard support
         if (IsKeyDown(KEY_W)) CameraMoveForward(camera, cameraMoveSpeed, moveInWorldPlane);
         if (IsKeyDown(KEY_A)) CameraMoveRight(camera, -cameraMoveSpeed, moveInWorldPlane);
