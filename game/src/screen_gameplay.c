@@ -36,8 +36,8 @@
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
-#define MAP_WIDTH 20
-#define MAP_HEIGHT 16
+#define MAP_WIDTH 10
+#define MAP_HEIGHT 8
 
 #define MAP_HEIGHT_VERTICES MAP_HEIGHT + 1
 #define MAP_WIDTH_VERTICES MAP_WIDTH + 1
@@ -487,19 +487,19 @@ void InitGameplayScreen(void)
 
         for (int j = 0; j < spawnZones[i].numTiles; j++)
         {
-            spawnZones[i].tiles[j] = &tileMap[j + 4][i * (MAP_WIDTH - 1)];
+            spawnZones[i].tiles[j] = &tileMap[j][i * (MAP_WIDTH - 1)];
         }
     }
 
     // Initialize and spawn Entities
 
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 3);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
 
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
 
     TextCopy(button.text, "END TURN");
     button.textColor = WHITE;
