@@ -577,19 +577,29 @@ void UpdateGameplayScreen(void)
             }
         }
 
-        if (!entityPicked && selection != -1 && hitMapWorld.hit && selectionTile->entity == NULL && IsTileSelectable(selectionTile))
+        if (!entityPicked && selection != -1 && hitMapWorld.hit)
         {
             Entity* entity = &entities[selection];
-            entity->position = selectionRectPos;
-            Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
-            Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
-            entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+            
+            if (selectionTile->entity == NULL && IsTileSelectable(selectionTile))
+            {
+                entity->position = selectionRectPos;
+                Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
+                Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
+                entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
 
-            entity->tile->entity = NULL;
-            entity->tile = selectionTile;
-            selectionTile->entity = entity;
+                entity->tile->entity = NULL;
+                entity->tile = selectionTile;
+                selectionTile->entity = entity;
 
-            EndTurn();
+                EndTurn();
+            } 
+            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID)
+            {
+                selectionTile->entity->isAlive = false;
+
+                EndTurn();
+            }
         }
     }
 
