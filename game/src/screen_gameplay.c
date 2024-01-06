@@ -437,6 +437,13 @@ bool IsTileSelectable(Tile* tile)
     return false;
 }
 
+void EndTurn()
+{
+    numSelectionTiles = 0;
+    selection = -1;
+    currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
+}
+
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
 {
@@ -494,14 +501,14 @@ void InitGameplayScreen(void)
     SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
     SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
 
-    TextCopy(button.text, "ATTACK");
+    TextCopy(button.text, "END TURN");
     button.textColor = WHITE;
     button.buttonColor = DARKGREEN;
     button.hoverColor = GREEN;
-    button.rect.x = 120;
-    button.rect.y = 120;
     button.rect.width = 200;
     button.rect.height = 120;
+    button.rect.x = GetScreenWidth() - button.rect.width;
+    button.rect.y = GetScreenHeight() - button.rect.height;
     button.fontSize = 32;
 }
 
@@ -569,10 +576,7 @@ void UpdateGameplayScreen(void)
             entity->tile = selectionTile;
             selectionTile->entity = entity;
 
-            numSelectionTiles = 0;
-            
-            selection = -1;
-            currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
+            EndTurn();
         }
     }
 
@@ -581,14 +585,7 @@ void UpdateGameplayScreen(void)
 
     if (IsButtonClicked(&button))
     {
-        if (button.buttonColor.r == DARKGREEN.r)
-        {
-            button.buttonColor = RED;
-        }
-        else
-        {
-            button.buttonColor = DARKGREEN;
-        }
+        EndTurn();
     }
 }
 
