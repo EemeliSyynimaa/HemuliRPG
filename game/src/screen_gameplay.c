@@ -31,6 +31,7 @@
 
 #include "entity.h"
 #include "level.h"
+#include "button.h"
 
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
@@ -320,6 +321,8 @@ int numSelectionTiles = 0;
 int selection = -1;
 int currentTurnTeamID = 1;
 
+Button button = { 0 };
+
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
@@ -490,6 +493,16 @@ void InitGameplayScreen(void)
     SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
     SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
     SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 2);
+
+    TextCopy(button.text, "ATTACK");
+    button.textColor = WHITE;
+    button.buttonColor = DARKGREEN;
+    button.hoverColor = GREEN;
+    button.rect.x = 120;
+    button.rect.y = 120;
+    button.rect.width = 200;
+    button.rect.height = 120;
+    button.fontSize = 32;
 }
 
 // Gameplay Screen Update logic
@@ -565,6 +578,18 @@ void UpdateGameplayScreen(void)
 
     if (IsKeyPressed(KEY_K)) RemoveEntity(selection);
     if (IsKeyPressed(KEY_L)) KillEntity(selection);
+
+    if (IsButtonClicked(&button))
+    {
+        if (button.buttonColor.r == DARKGREEN.r)
+        {
+            button.buttonColor = RED;
+        }
+        else
+        {
+            button.buttonColor = DARKGREEN;
+        }
+    }
 }
 
 // Gameplay Screen Draw logic
@@ -614,6 +639,8 @@ void DrawGameplayScreen(void)
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
     DrawText(TextFormat("PLAYER %d", currentTurnTeamID), 130, 220, 20, MAROON);
+
+    DrawButton(&button);
 }
 
 // Gameplay Screen Unload logic
