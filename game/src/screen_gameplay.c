@@ -214,10 +214,12 @@ void DrawTiles(Tile* tileMap, int mapHeight, int mapWidth, Camera camera)
     }
 }
 
-void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles)
+void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles, Entity* selectedEntity)
 {
-    Color color = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
-    
+    Color colorNormal = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
+    Color colorEnemy = { RED.r, RED.g, RED.b, 96 };
+    Color colorAlly = { BLUE.r, BLUE.g, BLUE.b, 96 };
+
     // FIX THIS
     rlSetTexture(blankTexture.id);
 
@@ -225,17 +227,28 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles)
     {
         Tile* tile = selectionTileMap[i];
 
-        if (tile->entity == NULL)
-        {
-            float offset = 0.02f;
+        float offset = 0.02f;
 
-            DrawQuad3D(camera,
-                Vector3Add(tile->bottomLeft, (Vector3) { offset, -0.01f, offset }),
-                Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset }),
-                Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
-                Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
-                color);
+        Color color = colorNormal;
+
+        if (tile->entity)
+        {
+            if (tile->entity->teamID == selectedEntity->teamID)
+            {
+                color = colorAlly;
+            }
+            else
+            {
+                color = colorEnemy;
+            }
         }
+
+        DrawQuad3D(camera,
+            Vector3Add(tile->bottomLeft, (Vector3) { offset, -0.01f, offset }),
+            Vector3Add(tile->bottomRight, (Vector3) { -offset, -0.01f, offset }),
+            Vector3Add(tile->topRight, (Vector3) { -offset, -0.01f, -offset }),
+            Vector3Add(tile->topLeft, (Vector3) { offset, -0.01f, -offset }),
+            color);
     }
 }
 
@@ -602,7 +615,7 @@ void DrawGameplayScreen(void)
 
         if (selection != -1)
         {
-            DrawSelectionArea(selectionTiles, numSelectionTiles);
+            DrawSelectionArea(selectionTiles, numSelectionTiles, &entities[selection]);
         }
 
         if (hitMapWorld.hit)
