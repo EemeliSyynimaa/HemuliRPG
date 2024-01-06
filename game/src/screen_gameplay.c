@@ -454,7 +454,24 @@ void EndTurn()
 {
     numSelectionTiles = 0;
     selection = -1;
-    currentTurnTeamID = currentTurnTeamID == 2 ? 1 : 2;
+    currentTurnTeamID = currentTurnTeamID == 1 ? 0 : 1;
+
+    int teamUnitCount[] = { 0, 0 };
+    
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        Entity* entity = &entities[i];
+        
+        if (entity->isAlive)
+        {
+            teamUnitCount[entity->teamID]++;
+        }
+    }
+
+    if (teamUnitCount[0] == 0 || teamUnitCount[1] == 0)
+    {
+        finishScreen = 1;
+    }
 }
 
 // Gameplay Screen Initialization logic
@@ -495,7 +512,7 @@ void InitGameplayScreen(void)
     // TODO: SELECT SPAWN TILE RANDOMLY INSTEAD OF ALL
     for (int i = 0; i < SPAWN_ZONES; i++)
     {
-        spawnZones[i].playerID = i + 1;
+        spawnZones[i].playerID = i;
         spawnZones[i].numTiles = 8;
 
         for (int j = 0; j < spawnZones[i].numTiles; j++)
@@ -666,7 +683,10 @@ void DrawGameplayScreen(void)
 // Gameplay Screen Unload logic
 void UnloadGameplayScreen(void)
 {
-    // TODO: Unload GAMEPLAY screen variables here!
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entities[i] = (Entity){ 0 };
+    }
 }
 
 // Gameplay Screen should finish?
