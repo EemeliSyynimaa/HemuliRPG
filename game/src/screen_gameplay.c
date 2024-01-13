@@ -191,7 +191,7 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
 
         DrawBillboardPro(camera, texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
 
-        if (entities[renderQueue[i]].teamID == currentTurnTeamID)
+        if (entities[renderQueue[i]].teamID == currentTurnTeamID && entities[renderQueue[i]].type == ENTITY_TYPE_CHARACTER)
         {
             DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
         }
@@ -231,7 +231,7 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles, Entity* 
 
         Color color = colorNormal;
 
-        if (tile->entity)
+        if (tile->entity && tile->entity->type == ENTITY_TYPE_CHARACTER)
         {
             if (tile->entity->teamID == selectedEntity->teamID)
             {
@@ -324,7 +324,7 @@ Button button = { 0 };
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed)
+void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -351,6 +351,8 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTextu
             entity->deathTexture = *deathTexture;
             entity->textureRect = (Rectangle){ 0.0f, 0.0f, (float)(*texture).width, (float)(*texture).height };
             entity->teamID = spawnZone->playerID;
+            entity->type = ENTITY_TYPE_CHARACTER;
+            entity->isBlockingMovement = true;
             entity->speed = speed;
 
             numEntities++;
@@ -361,6 +363,32 @@ void SpawnEntity(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTextu
             return;
         }
     }
+}
+
+void SpawnTerrainObject(int x, int z, Texture2D* texture)
+{
+    Entity* entity = &entities[numEntities];
+    numEntities++;
+
+    entity->isActive = true;
+    entity->isAlive = true;
+
+    Tile* spawnTile = &tileMap[z][x];
+    Vector3 spawnPosition = { 0 };
+
+    spawnPosition.x = spawnTile->bottomLeft.x;
+    spawnPosition.z = spawnTile->bottomLeft.z;
+    spawnPosition.y = spawnTile->entityPos;
+
+    entity->position = spawnPosition;
+    entity->size = (Vector2){ 1.0f, 1.0f };
+    entity->texture = *texture;
+    entity->textureRect = (Rectangle){ 0.0f, 0.0f, (float)(*texture).width, (float)(*texture).height };
+    entity->type = ENTITY_TYPE_TERRAIN_OBJECT;
+    entity->isBlockingMovement = true;
+
+    entity->tile = spawnTile;
+    spawnTile->entity = entity;
 }
 
 void RemoveEntity(int entityIndex)
@@ -386,6 +414,7 @@ void KillEntity(int entityIndex)
         Entity* entity = &entities[entityIndex];
 
         entity->isAlive = false;
+        entity->isBlockingMovement = false;
 
         if (selection == entityIndex)
         {
@@ -413,10 +442,13 @@ void SelectEntity(int entityIndex)
 
                 float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
 
-                if (tileDistance <= entity->speed)
+                if (!tile->entity || !tile->entity->isBlockingMovement)
                 {
-                    selectionTiles[numSelectionTiles] = tile;
-                    numSelectionTiles++;
+                    if (tileDistance <= entity->speed && tile->walkable)
+                    {
+                        selectionTiles[numSelectionTiles] = tile;
+                        numSelectionTiles++;
+                    }
                 }
             }
         }
@@ -489,7 +521,7 @@ void InitGameplayScreen(void)
             tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
             tile->texture = grassTexture;
             tile->entity = NULL;
-            tile->walkable = true;
+            tile->walkable = true;      // TODO: BASED ON BIOME
         }
     }
 
@@ -508,13 +540,17 @@ void InitGameplayScreen(void)
 
     // Initialize and spawn Entities
 
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
-    SpawnEntity(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnTerrainObject(4, 3, &treeTexture);
+    SpawnTerrainObject(1, 5, &treeTexture);
+    SpawnTerrainObject(2, 2, &rockTexture);
 
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
-    SpawnEntity(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+         
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
 
     TextCopy(button.text, "END TURN");
     button.textColor = WHITE;
@@ -568,7 +604,7 @@ void UpdateGameplayScreen(void)
             {
                 RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
 
-                if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID)
+                if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID && entities[i].type == ENTITY_TYPE_CHARACTER)
                 {
                     hitMapEntity.point = entities[i].position;
                     DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
@@ -582,6 +618,8 @@ void UpdateGameplayScreen(void)
         if (!entityPicked && selection != -1 && hitMapWorld.hit)
         {
             Entity* entity = &entities[selection];
+
+            // FIX KILLING ENEMIES AGAIN AND ENDING TURN
             
             if (selectionTile->entity == NULL && IsTileSelectable(selectionTile))
             {
@@ -596,7 +634,7 @@ void UpdateGameplayScreen(void)
 
                 EndTurn();
             } 
-            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID)
+            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER)
             {
                 selectionTile->entity->isAlive = false;
 

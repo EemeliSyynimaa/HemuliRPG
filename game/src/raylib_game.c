@@ -28,6 +28,8 @@ Font font = { 0 };
 Music music = { 0 };
 Sound fxCoin = { 0 };
 Texture2D grassTexture = { 0 };
+Texture2D treeTexture = { 0 };
+Texture2D rockTexture = { 0 };
 Texture2D orcTexture = { 0 };
 Texture2D deadOrcTexture = { 0 };
 Texture2D wizardTexture = { 0 };
@@ -75,6 +77,8 @@ int main(void)
     music = LoadMusicStream("resources/ambient.ogg");
     fxCoin = LoadSound("resources/coin.wav");
     grassTexture = LoadTexture("resources/grass.png");
+    treeTexture = LoadTexture("resources/tree.png");
+    rockTexture = LoadTexture("resources/rock.png");
     orcTexture = LoadTexture("resources/orc.png");
     deadOrcTexture = LoadTexture("resources/orc_dead.png");
     wizardTexture = LoadTexture("resources/wizard.png");
@@ -124,6 +128,8 @@ int main(void)
     UnloadMusicStream(music);
     UnloadSound(fxCoin);
     UnloadTexture(grassTexture);
+    UnloadTexture(treeTexture);
+    UnloadTexture(rockTexture);
     UnloadTexture(orcTexture);
     UnloadTexture(deadOrcTexture);
     UnloadTexture(wizardTexture);

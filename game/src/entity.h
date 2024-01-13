@@ -5,6 +5,12 @@
 
 typedef struct Tile Tile;
 
+enum EntityType
+{
+	ENTITY_TYPE_CHARACTER,
+	ENTITY_TYPE_TERRAIN_OBJECT
+};
+
 typedef struct Entity
 {
 	// Rendering variables
@@ -23,7 +29,9 @@ typedef struct Entity
 
 	bool isActive;
 	bool isAlive;
+	bool isBlockingMovement;
 	int teamID;
+	int type;
 	int speed;
 
 } Entity;
