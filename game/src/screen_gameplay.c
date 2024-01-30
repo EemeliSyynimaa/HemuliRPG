@@ -318,8 +318,10 @@ int numSelectionTiles = 0;
 
 int selection = -1;
 int currentTurnTeamID = 1;
+bool targetingMode = false;
 
-Button button = { 0 };
+Button endTurnButton = { 0 };
+Button attackButton = { 0 };
 
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
@@ -391,36 +393,16 @@ void SpawnTerrainObject(int x, int z, Texture2D* texture)
     spawnTile->entity = entity;
 }
 
-void RemoveEntity(int entityIndex)
+void RemoveEntity(Entity* entity)
 {
-    if (entityIndex >= 0 && entityIndex < MAX_ENTITIES)
-    {
-        Entity* entity = &entities[entityIndex];
-
-        entity->tile->entity = NULL;
-        entity->isActive = false;
-
-        if (selection == entityIndex)
-        {
-            selection = -1;
-        }
-    }
+    entity->tile->entity = NULL;
+    entity->isActive = false;
 }
 
-void KillEntity(int entityIndex)
+void KillEntity(Entity* entity)
 {
-    if (entityIndex >= 0 && entityIndex < MAX_ENTITIES)
-    {
-        Entity* entity = &entities[entityIndex];
-
-        entity->isAlive = false;
-        entity->isBlockingMovement = false;
-
-        if (selection == entityIndex)
-        {
-            selection = -1;
-        }
-    }
+    entity->isAlive = false;
+    entity->isBlockingMovement = false;
 }
 
 void SelectEntity(int entityIndex)
@@ -473,13 +455,16 @@ void EndTurn()
     selection = -1;
     currentTurnTeamID = currentTurnTeamID == 1 ? 0 : 1;
 
+    targetingMode = false;
+    TextCopy(attackButton.text, "ATTACK");
+
     int teamUnitCount[] = { 0, 0 };
     
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
         Entity* entity = &entities[i];
         
-        if (entity->isAlive)
+        if (entity->isAlive && entity->type == ENTITY_TYPE_CHARACTER)
         {
             teamUnitCount[entity->teamID]++;
         }
@@ -497,6 +482,7 @@ void InitGameplayScreen(void)
     // TODO: Initialize GAMEPLAY screen variables here!
     framesCounter = 0;
     finishScreen = 0;
+    numEntities = 0;
 
     // Initialize Level
     for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
@@ -552,15 +538,25 @@ void InitGameplayScreen(void)
     SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
     SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
 
-    TextCopy(button.text, "END TURN");
-    button.textColor = WHITE;
-    button.buttonColor = DARKGREEN;
-    button.hoverColor = GREEN;
-    button.rect.width = 200;
-    button.rect.height = 120;
-    button.rect.x = GetScreenWidth() - button.rect.width;
-    button.rect.y = GetScreenHeight() - button.rect.height;
-    button.fontSize = 32;
+    TextCopy(endTurnButton.text, "END TURN");
+    endTurnButton.textColor = WHITE;
+    endTurnButton.buttonColor = DARKGREEN;
+    endTurnButton.hoverColor = GREEN;
+    endTurnButton.rect.width = 200;
+    endTurnButton.rect.height = 120;
+    endTurnButton.rect.x = GetScreenWidth() - endTurnButton.rect.width;
+    endTurnButton.rect.y = GetScreenHeight() - endTurnButton.rect.height;
+    endTurnButton.fontSize = 32;
+
+    TextCopy(attackButton.text, "ATTACK");
+    attackButton.textColor = WHITE;
+    attackButton.buttonColor = RED;
+    attackButton.hoverColor = DARKGRAY;
+    attackButton.rect.width = 200;
+    attackButton.rect.height = 120;
+    attackButton.rect.x = GetScreenWidth() / 2 - attackButton.rect.width / 2;
+    attackButton.rect.y = GetScreenHeight() - attackButton.rect.height * 2;
+    attackButton.fontSize = 32;
 }
 
 // Gameplay Screen Update logic
@@ -592,9 +588,18 @@ void UpdateGameplayScreen(void)
     float selectionRectZ = floorf(hitMapWorld.point.z);
 
     Tile* selectionTile = &tileMap[(int)selectionRectZ][(int)selectionRectX];
-    selectionRectPos = (Vector3){ selectionRectX, selectionTile->entityPos, selectionRectZ};
+    selectionRectPos = (Vector3){ selectionRectX, selectionTile->entityPos, selectionRectZ };
 
-    if (IsMouseButtonPressed(0))
+    if (IsButtonClicked(&endTurnButton))
+    {
+        EndTurn();
+    }
+    else if (IsButtonClicked(&attackButton) && selection != -1)
+    {
+        targetingMode = true;
+        TextCopy(attackButton.text, "TARGET");
+    }
+    else if (IsMouseButtonPressed(0))
     {
         bool entityPicked = false;
 
@@ -620,7 +625,7 @@ void UpdateGameplayScreen(void)
             Entity* entity = &entities[selection];
 
             // FIX KILLING ENEMIES AGAIN AND ENDING TURN
-            
+
             if (selectionTile->entity == NULL && IsTileSelectable(selectionTile))
             {
                 entity->position = selectionRectPos;
@@ -633,22 +638,20 @@ void UpdateGameplayScreen(void)
                 selectionTile->entity = entity;
 
                 EndTurn();
-            } 
-            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER)
+            }
+            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER && targetingMode == true)
             {
-                selectionTile->entity->isAlive = false;
+                //selectionTile->entity->isAlive = false;
+                KillEntity(selectionTile->entity);
 
                 EndTurn();
             }
         }
     }
-
-    if (IsKeyPressed(KEY_K)) RemoveEntity(selection);
-    if (IsKeyPressed(KEY_L)) KillEntity(selection);
-
-    if (IsButtonClicked(&button))
+    if (selection != -1)
     {
-        EndTurn();
+        if (IsKeyPressed(KEY_K)) RemoveEntity(&entities[selection]);
+        if (IsKeyPressed(KEY_L)) KillEntity(&entities[selection]);
     }
 }
 
@@ -687,7 +690,6 @@ void DrawGameplayScreen(void)
 
         DrawEntities(entities, numEntities, selection, currentTurnTeamID, camera);
         
-
     EndMode3D();
 
     if (hitMapWorld.hit)
@@ -700,7 +702,8 @@ void DrawGameplayScreen(void)
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
     DrawText(TextFormat("PLAYER %d", currentTurnTeamID), 130, 220, 20, MAROON);
 
-    DrawButton(&button);
+    DrawButton(&endTurnButton);
+    DrawButton(&attackButton);
 }
 
 // Gameplay Screen Unload logic

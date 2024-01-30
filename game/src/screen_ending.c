@@ -65,7 +65,7 @@ void DrawEndingScreen(void)
 
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "ENDING SCREEN", pos, font.baseSize*3.0f, 4, DARKBLUE);
-    DrawText("PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
+    DrawText("YOU WIN!!! PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
 }
 
 // Ending Screen Unload logic
