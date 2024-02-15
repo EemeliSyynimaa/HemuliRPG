@@ -309,7 +309,9 @@ static float depthMap[MAP_HEIGHT_VERTICES][MAP_WIDTH_VERTICES];
 static SpawnZone spawnZones[SPAWN_ZONES];
 
 Entity entities[MAX_ENTITIES] = { 0 };
+Entity* entityTurnQueue[MAX_ENTITIES] = { 0 };
 int numEntities = 0;
+int numEntityTurns = 0;
 
 RayCollision hitMapWorld = { 0 };
 Vector3 selectionRectPos = { 0 };
@@ -343,6 +345,7 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
             spawnPosition.y = spawnTile->entityPos;
 
             Entity* entity = &entities[numEntities];
+            entityTurnQueue[numEntityTurns] = entity;
 
             entity->isActive = true;
             entity->isAlive = true;
@@ -356,8 +359,10 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
             entity->type = ENTITY_TYPE_CHARACTER;
             entity->isBlockingMovement = true;
             entity->speed = speed;
+            entity->initiative = 10 - numEntities;
 
             numEntities++;
+            numEntityTurns++;
 
             entity->tile = spawnTile;
             spawnTile->entity = entity;
@@ -447,6 +452,13 @@ bool IsTileSelectable(Tile* tile)
         }
     }
     return false;
+}
+
+void BeginTurn(int index)
+{
+    Entity* currentEntity = entityTurnQueue[index];
+    int entityIndex = currentEntity - &entities[0];    // ????? TO BE CONTINUED ?????
+    printf("%i\n\n", entityIndex);
 }
 
 void EndTurn()
@@ -557,6 +569,29 @@ void InitGameplayScreen(void)
     attackButton.rect.x = GetScreenWidth() / 2 - attackButton.rect.width / 2;
     attackButton.rect.y = GetScreenHeight() - attackButton.rect.height * 2;
     attackButton.fontSize = 32;
+
+    // Sort turn queue
+
+    for (int i = 0; i < numEntityTurns - 1; i++)
+    {
+        for (int j = i + 1; j < numEntityTurns; j++)
+        {
+            Entity* entityA = entityTurnQueue[i];
+            Entity* entityB = entityTurnQueue[j];
+
+            if (entityA->initiative > entityB->initiative)
+            {
+                entityTurnQueue[i] = entityB;
+                entityTurnQueue[j] = entityA;
+            }
+        }
+    }
+
+    BeginTurn(1);
+    BeginTurn(4);
+    BeginTurn(2);
+    BeginTurn(7);
+    BeginTurn(0);
 }
 
 // Gameplay Screen Update logic

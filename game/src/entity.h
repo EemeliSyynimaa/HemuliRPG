@@ -33,6 +33,7 @@ typedef struct Entity
 	int teamID;
 	int type;
 	int speed;
+	int initiative;
 
 } Entity;
 
