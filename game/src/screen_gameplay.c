@@ -119,7 +119,7 @@ void DrawGameGrid(int mapWidth, int mapHeight, int spacing)
     rlEnd();
 }
 
-void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int currentTurnTeamID, Camera camera)
+void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera camera)
 {
     // HAX: pls fix at some point, MAX_ENTITIES?
     int renderQueue[128] = { 0 };
@@ -191,10 +191,11 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, int cu
 
         DrawBillboardPro(camera, texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
 
-        if (entities[renderQueue[i]].teamID == currentTurnTeamID && entities[renderQueue[i]].type == ENTITY_TYPE_CHARACTER)
+        // TODO FIX.
+        /*if (entities[renderQueue[i]].teamID == currentTurnTeamID && entities[renderQueue[i]].type == ENTITY_TYPE_CHARACTER)
         {
             DrawBoundingBox(entities[renderQueue[i]].boundingBox, WHITE);
-        }
+        }*/
     }
 }
 
@@ -319,7 +320,6 @@ Tile* selectionTiles[MAP_HEIGHT * MAP_WIDTH] = { 0 };
 int numSelectionTiles = 0;
 
 int selection = -1;
-int currentTurnTeamID = 1;
 bool targetingMode = false;
 
 Button endTurnButton = { 0 };
@@ -454,18 +454,71 @@ bool IsTileSelectable(Tile* tile)
     return false;
 }
 
-void BeginTurn(int index)
+void SortEntityTurnQueue()
 {
-    Entity* currentEntity = entityTurnQueue[index];
-    int entityIndex = currentEntity - &entities[0];    // ????? TO BE CONTINUED ?????
-    printf("%i\n\n", entityIndex);
+    for (int i = 0; i < numEntityTurns - 1; i++)
+    {
+        for (int j = i + 1; j < numEntityTurns; j++)
+        {
+            Entity* entityA = entityTurnQueue[i];
+            Entity* entityB = entityTurnQueue[j];
+
+            if (entityA->initiative > entityB->initiative)
+            {
+                entityTurnQueue[i] = entityB;
+                entityTurnQueue[j] = entityA;
+            }
+        }
+    }
+}
+
+void BeginTurn()
+{
+    SortEntityTurnQueue();
+    Entity* currentEntity = NULL;
+
+    for (int i = 0; i < numEntityTurns; i++)
+    {
+        if (entityTurnQueue[i]->isAlive)
+        {
+            currentEntity = entityTurnQueue[i];
+            break;
+        }
+    }
+
+    if (currentEntity == NULL)
+    {
+        finishScreen = 1;
+        return;
+    }
+    else
+    {
+        SelectEntity(currentEntity - &entities[0]);
+        int selectionInitiative = currentEntity->initiative;
+
+        for (int i = 0; i < numEntityTurns; i++)
+        {
+            int index = entityTurnQueue[i] - &entities[0];
+            printf("%i, init:%i\n\n", index, entities[index].initiative);
+        }
+
+        for (int i = 0; i < MAX_ENTITIES; i++)
+        {
+            Entity* entity = &entities[i];
+
+            if (entity->isAlive && entity->type == ENTITY_TYPE_CHARACTER)
+            {
+                entity->initiative -= selectionInitiative;
+            }
+        }
+    }
 }
 
 void EndTurn()
 {
-    numSelectionTiles = 0;
+    entities[selection].initiative += 10;
     selection = -1;
-    currentTurnTeamID = currentTurnTeamID == 1 ? 0 : 1;
+    numSelectionTiles = 0;
 
     targetingMode = false;
     TextCopy(attackButton.text, "ATTACK");
@@ -486,6 +539,8 @@ void EndTurn()
     {
         finishScreen = 1;
     }
+
+    BeginTurn();
 }
 
 // Gameplay Screen Initialization logic
@@ -570,28 +625,7 @@ void InitGameplayScreen(void)
     attackButton.rect.y = GetScreenHeight() - attackButton.rect.height * 2;
     attackButton.fontSize = 32;
 
-    // Sort turn queue
-
-    for (int i = 0; i < numEntityTurns - 1; i++)
-    {
-        for (int j = i + 1; j < numEntityTurns; j++)
-        {
-            Entity* entityA = entityTurnQueue[i];
-            Entity* entityB = entityTurnQueue[j];
-
-            if (entityA->initiative > entityB->initiative)
-            {
-                entityTurnQueue[i] = entityB;
-                entityTurnQueue[j] = entityA;
-            }
-        }
-    }
-
-    BeginTurn(1);
-    BeginTurn(4);
-    BeginTurn(2);
-    BeginTurn(7);
-    BeginTurn(0);
+    BeginTurn();
 }
 
 // Gameplay Screen Update logic
@@ -634,17 +668,17 @@ void UpdateGameplayScreen(void)
         targetingMode = true;
         TextCopy(attackButton.text, "TARGET");
     }
-    else if (IsMouseButtonPressed(0))
+    else if (IsMouseButtonPressed(0) && hitMapWorld.hit)
     {
         bool entityPicked = false;
 
-        for (int i = 0; i < numEntities; i++)
+        /*for (int i = 0; i < numEntities; i++)
         {
             if (entities[i].isActive)
             {
                 RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
 
-                if (hitMapEntity.hit && entities[i].teamID == currentTurnTeamID && entities[i].type == ENTITY_TYPE_CHARACTER)
+                if (hitMapEntity.hit && entities[i].type == ENTITY_TYPE_CHARACTER)
                 {
                     hitMapEntity.point = entities[i].position;
                     DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
@@ -653,9 +687,9 @@ void UpdateGameplayScreen(void)
                     SelectEntity(i);
                 }
             }
-        }
+        }*/
 
-        if (!entityPicked && selection != -1 && hitMapWorld.hit)
+        if (!entityPicked && selection != -1)
         {
             Entity* entity = &entities[selection];
 
@@ -723,7 +757,7 @@ void DrawGameplayScreen(void)
             DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
         }
 
-        DrawEntities(entities, numEntities, selection, currentTurnTeamID, camera);
+        DrawEntities(entities, numEntities, selection, camera);
         
     EndMode3D();
 
@@ -735,8 +769,7 @@ void DrawGameplayScreen(void)
 
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
-    DrawText(TextFormat("PLAYER %d", currentTurnTeamID), 130, 220, 20, MAROON);
-
+   
     DrawButton(&endTurnButton);
     DrawButton(&attackButton);
 }
