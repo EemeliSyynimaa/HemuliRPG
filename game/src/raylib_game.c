@@ -69,6 +69,7 @@ int main(void)
     // Initialization
     //---------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "raylib game template");
+    SetTraceLogLevel(LOG_DEBUG);
 
     InitAudioDevice();      // Initialize audio device
 
