@@ -493,14 +493,8 @@ void BeginTurn()
     }
     else
     {
-        SelectEntity(currentEntity - &entities[0]);
+        SelectEntity((int)(currentEntity - &entities[0]));
         int selectionInitiative = currentEntity->initiative;
-
-        for (int i = 0; i < numEntityTurns; i++)
-        {
-            int index = entityTurnQueue[i] - &entities[0];
-            printf("%i, init:%i\n\n", index, entities[index].initiative);
-        }
 
         for (int i = 0; i < MAX_ENTITIES; i++)
         {
