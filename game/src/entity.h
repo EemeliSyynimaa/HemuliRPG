@@ -32,8 +32,9 @@ typedef struct Entity
 	bool isBlockingMovement;
 	int teamID;
 	int type;
-	int speed;
-	int initiative;
+	int speed;					// How many tiles can the unit move.
+	int baseInitiative;			// Initiative value reset after a finished turn.
+	int currentInitiative;		// Determines position in turn queue.
 	char name[256];
 
 } Entity;

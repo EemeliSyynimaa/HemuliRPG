@@ -328,7 +328,7 @@ Button attackButton = { 0 };
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed, char* name)
+void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed, int baseInitiative, char* name)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -360,7 +360,8 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
             entity->isBlockingMovement = true;
             entity->speed = speed;
             TextCopy(entity->name, name);
-            entity->initiative = 10 - numEntities;
+            entity->baseInitiative = baseInitiative;
+            entity->currentInitiative = baseInitiative;
 
             numEntities++;
             numEntityTurns++;
@@ -464,7 +465,7 @@ void SortEntityTurnQueue()
             Entity* entityA = entityTurnQueue[i];
             Entity* entityB = entityTurnQueue[j];
 
-            if (entityA->initiative > entityB->initiative)
+            if (entityA->currentInitiative > entityB->currentInitiative)
             {
                 entityTurnQueue[i] = entityB;
                 entityTurnQueue[j] = entityA;
@@ -495,7 +496,7 @@ void BeginTurn()
     else
     {
         SelectEntity((int)(currentEntity - &entities[0]));
-        int selectionInitiative = currentEntity->initiative;
+        int selectionInitiative = currentEntity->currentInitiative;
 
         for (int i = 0; i < MAX_ENTITIES; i++)
         {
@@ -503,7 +504,7 @@ void BeginTurn()
 
             if (entity->isAlive && entity->type == ENTITY_TYPE_CHARACTER)
             {
-                entity->initiative -= selectionInitiative;
+                entity->currentInitiative -= selectionInitiative;
             }
         }
     }
@@ -511,7 +512,7 @@ void BeginTurn()
 
 void EndTurn()
 {
-    entities[selection].initiative += 10;
+    entities[selection].currentInitiative = entities[selection].baseInitiative;
     selection = -1;
     numSelectionTiles = 0;
 
@@ -593,13 +594,13 @@ void InitGameplayScreen(void)
     SpawnTerrainObject(1, 5, &treeTexture);
     SpawnTerrainObject(2, 2, &rockTexture);
 
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Pasi");
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Kielo");
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Gandalf");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6,"Pasi");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6,"Kielo");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 6, 4,"Gandalf");
          
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Siqu");
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Bab");
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Sukellushitsaaja");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 2, 10, "Siqu");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 10, "Bab");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 2, "Sukellushitsaaja");
 
     TextCopy(endTurnButton.text, "END TURN");
     endTurnButton.textColor = WHITE;
@@ -774,7 +775,7 @@ void DrawGameplayScreen(void)
         
         if (entityTurnQueue[i] != NULL && entityTurnQueue[i]->isAlive && entityTurnQueue[i]->type == ENTITY_TYPE_CHARACTER)
         {
-            DrawText(TextFormat("%d: %s", index+1, entityTurnQueue[i]->name), x, y + index * 30, 20, MAROON);
+            DrawText(TextFormat("%d: %s [%d]", index+1, entityTurnQueue[i]->name, entityTurnQueue[i]->currentInitiative), x, y + index * 30, 20, MAROON);
             index++;
         }
     }
