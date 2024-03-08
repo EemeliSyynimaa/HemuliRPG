@@ -34,6 +34,7 @@ typedef struct Entity
 	int type;
 	int speed;
 	int initiative;
+	char name[256];
 
 } Entity;
 

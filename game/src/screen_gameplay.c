@@ -328,7 +328,7 @@ Button attackButton = { 0 };
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed)
+void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed, char* name)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -359,6 +359,7 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
             entity->type = ENTITY_TYPE_CHARACTER;
             entity->isBlockingMovement = true;
             entity->speed = speed;
+            TextCopy(entity->name, name);
             entity->initiative = 10 - numEntities;
 
             numEntities++;
@@ -544,6 +545,7 @@ void InitGameplayScreen(void)
     framesCounter = 0;
     finishScreen = 0;
     numEntities = 0;
+    numEntityTurns = 0;
 
     // Initialize Level
     for (int z = 0; z < MAP_HEIGHT_VERTICES; z++)
@@ -591,13 +593,13 @@ void InitGameplayScreen(void)
     SpawnTerrainObject(1, 5, &treeTexture);
     SpawnTerrainObject(2, 2, &rockTexture);
 
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4);
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Pasi");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Kielo");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, "Gandalf");
          
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3);
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Siqu");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Bab");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, "Sukellushitsaaja");
 
     TextCopy(endTurnButton.text, "END TURN");
     endTurnButton.textColor = WHITE;
@@ -761,6 +763,22 @@ void DrawGameplayScreen(void)
         //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
     }
 
+    // Draw entity turn queue
+
+    int index = 0;
+
+    for (int i = 0; i < numEntityTurns; i++)
+    {
+        int x = 1700;
+        int y = 100;
+        
+        if (entityTurnQueue[i] != NULL && entityTurnQueue[i]->isAlive && entityTurnQueue[i]->type == ENTITY_TYPE_CHARACTER)
+        {
+            DrawText(TextFormat("%d: %s", index+1, entityTurnQueue[i]->name), x, y + index * 30, 20, MAROON);
+            index++;
+        }
+    }
+
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
    
@@ -774,6 +792,7 @@ void UnloadGameplayScreen(void)
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
         entities[i] = (Entity){ 0 };
+        entityTurnQueue[i] = NULL;
     }
 }
 
