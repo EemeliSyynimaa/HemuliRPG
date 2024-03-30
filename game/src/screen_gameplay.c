@@ -721,6 +721,23 @@ void UpdateGameplayScreen(void)
     }
 }
 
+void DrawEntityTurnQueue()
+{
+    int index = 0;
+
+    for (int i = 0; i < numEntityTurns; i++)
+    {
+        int x = 1700;
+        int y = 100;
+
+        if (entityTurnQueue[i] != NULL && entityTurnQueue[i]->isAlive && entityTurnQueue[i]->type == ENTITY_TYPE_CHARACTER)
+        {
+            DrawText(TextFormat("%d: %s [%d]", index + 1, entityTurnQueue[i]->name, entityTurnQueue[i]->currentInitiative), x, y + index * 30, 20, MAROON);
+            index++;
+        }
+    }
+}
+
 // Gameplay Screen Draw logic
 void DrawGameplayScreen(void)
 {
@@ -765,20 +782,7 @@ void DrawGameplayScreen(void)
     }
 
     // Draw entity turn queue
-
-    int index = 0;
-
-    for (int i = 0; i < numEntityTurns; i++)
-    {
-        int x = 1700;
-        int y = 100;
-        
-        if (entityTurnQueue[i] != NULL && entityTurnQueue[i]->isAlive && entityTurnQueue[i]->type == ENTITY_TYPE_CHARACTER)
-        {
-            DrawText(TextFormat("%d: %s [%d]", index+1, entityTurnQueue[i]->name, entityTurnQueue[i]->currentInitiative), x, y + index * 30, 20, MAROON);
-            index++;
-        }
-    }
+    DrawEntityTurnQueue();
 
     Vector2 pos = { 20, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize * 3.0f, 4, MAROON);
