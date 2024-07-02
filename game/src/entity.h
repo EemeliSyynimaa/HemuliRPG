@@ -35,6 +35,10 @@ typedef struct Entity
 	int speed;					// How many tiles can the unit move.
 	int baseInitiative;			// Initiative value reset after a finished turn.
 	int currentInitiative;		// Determines position in turn queue.
+	int health;
+	int maxHealth;
+	int minAttack;				// TEMP
+	int maxAttack;
 	char name[256];
 
 	// Attributes

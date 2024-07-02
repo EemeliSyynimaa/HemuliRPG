@@ -189,8 +189,29 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera
             texture = entity->deathTexture;
         }
 
+        // Draw unit/entity.
         DrawBillboardPro(camera, texture, entity->textureRect, entityPos, up, entity->size, origin, rotation, tint);
 
+        if (entity->maxHealth != 0)
+        {
+            // Draw healthbar.
+            Texture healthTexture = blankTexture;
+            Rectangle healthTextureRect = (Rectangle){ 0.0f, 0.0f, (float)healthTexture.width, (float)healthTexture.height };
+            Vector3 healthPos = { 0.0f };
+            healthPos.x = entityPos.x;
+            healthPos.y = entityPos.y - entity->size.y * 0.5f - 0.1f;
+            healthPos.z = entityPos.z;
+
+            float healthPercentage = (float)entity->health / (float)entity->maxHealth;
+
+            Color healthBarColor = RED;
+            if (entity->teamID == entities[selectedUnitID].teamID)
+            {
+                healthBarColor = BLUE;
+            }
+
+            DrawBillboardPro(camera, healthTexture, healthTextureRect, healthPos, up, (Vector2) { 1.0f * healthPercentage, 0.1f }, origin, rotation, healthBarColor);
+        }
         // TODO FIX.
         /*if (entities[renderQueue[i]].teamID == currentTurnTeamID && entities[renderQueue[i]].type == ENTITY_TYPE_CHARACTER)
         {
@@ -328,7 +349,7 @@ Button attackButton = { 0 };
 //----------------------------------------------------------------------------------
 // Gameplay Screen Functions Definition
 //----------------------------------------------------------------------------------
-void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed, int baseInitiative, char* name)
+void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTexture, int speed, int baseInitiative, int health, int maxHealth, int minAttack, int maxAttack, char* name)
 {
     int numTiles = spawnZone->numTiles;
 
@@ -362,7 +383,10 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
             TextCopy(entity->name, name);
             entity->baseInitiative = baseInitiative;
             entity->currentInitiative = baseInitiative;
-
+            entity->health = health;
+            entity->maxHealth = maxHealth;
+            entity->minAttack = minAttack;
+            entity->maxAttack = maxAttack;
             numEntities++;
             numEntityTurns++;
 
@@ -594,13 +618,13 @@ void InitGameplayScreen(void)
     SpawnTerrainObject(1, 5, &treeTexture);
     SpawnTerrainObject(2, 2, &rockTexture);
 
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6,"Pasi");
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6,"Kielo");
-    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 6, 4,"Gandalf");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6, 80, 80, 6, 12, "Pasi");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 4, 6, 85, 85, 8, 14, "Kielo");
+    SpawnCharacter(&spawnZones[0], &wizardTexture, &deadWizardTexture, 6, 4, 75, 75, 12, 22, "Gandalf");
          
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 2, 10, "Siqu");
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 10, "Bab");
-    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 2, "Sukellushitsaaja");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 2, 10, 80, 120, 5, 15, "Siqu");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 10, 130, 130, 16, 20, "Bab");
+    SpawnCharacter(&spawnZones[1], &orcTexture, &deadOrcTexture, 3, 2, 100, 100, 14, 18, "Sukellushitsaaja");
 
     TextCopy(endTurnButton.text, "END TURN");
     endTurnButton.textColor = WHITE;
@@ -708,7 +732,15 @@ void UpdateGameplayScreen(void)
             else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER && targetingMode == true)
             {
                 //selectionTile->entity->isAlive = false;
-                KillEntity(selectionTile->entity);
+       
+                int damage = GetRandomValue(entity->minAttack, entity->maxAttack);
+                selectionTile->entity->health = selectionTile->entity->health - damage;
+
+                if (selectionTile->entity->health <= 0)
+                {
+                    selectionTile->entity->health = 0;
+                    KillEntity(selectionTile->entity);
+                }
 
                 EndTurn();
             }
