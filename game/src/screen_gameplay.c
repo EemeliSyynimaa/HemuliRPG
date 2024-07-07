@@ -158,21 +158,6 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera
             continue;
         }
 
-        if (renderQueue[i] == selectedUnitID)
-        {
-            Color color = { PURPLE.r, PURPLE.g, PURPLE.b, 96 };
-
-            Vector3 bottomLeft = entities[renderQueue[i]].tile->bottomLeft;
-            Vector3 topLeft = entities[renderQueue[i]].tile->topLeft;
-            Vector3 bottomRight = entities[renderQueue[i]].tile->bottomRight;
-            Vector3 topRight = entities[renderQueue[i]].tile->topRight;
-
-            // FIX THIS
-            rlSetTexture(blankTexture.id);
-
-            DrawQuad3D(camera, bottomLeft, bottomRight, topRight, topLeft, color);
-        }
-
         Vector3 up = { 0.0f, -1.0f, 0.0f };
         Vector2 origin = Vector2Zero();
         float rotation = 0.0f;
@@ -247,6 +232,7 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles, Entity* 
     Color colorNormal = { YELLOW.r, YELLOW.g, YELLOW.b, 96 };
     Color colorEnemy = { RED.r, RED.g, RED.b, 96 };
     Color colorAlly = { BLUE.r, BLUE.g, BLUE.b, 96 };
+    Color colorSelected = { WHITE.r, WHITE.g, WHITE.b, 164 };
 
     // FIX THIS
     rlSetTexture(blankTexture.id);
@@ -259,15 +245,26 @@ void DrawSelectionArea(Tile* selectionTileMap[], int numSelectionTiles, Entity* 
 
         Color color = colorNormal;
 
-        if (tile->entity && tile->entity->type == ENTITY_TYPE_CHARACTER)
+        if (tile->entity)
         {
-            if (tile->entity->teamID == selectedEntity->teamID)
+            if (tile->entity->type == ENTITY_TYPE_CHARACTER)
             {
-                color = colorAlly;
+                if (tile->entity == selectedEntity)
+                {
+                    color = colorSelected;
+                }
+                else if (tile->entity->teamID == selectedEntity->teamID)
+                {
+                    color = colorAlly;
+                }
+                else
+                {
+                    color = colorEnemy;
+                }
             }
-            else
+            else if (tile->entity->type == ENTITY_TYPE_TERRAIN_OBJECT)
             {
-                color = colorEnemy;
+                continue;
             }
         }
 
@@ -461,7 +458,6 @@ void SelectEntity(int entityIndex)
 
                 float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
 
-                if (!tile->entity || !tile->entity->isBlockingMovement)
                 {
                     if (tileDistance <= entity->speed && tile->walkable)
                     {
