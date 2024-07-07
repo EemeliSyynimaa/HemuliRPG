@@ -691,33 +691,13 @@ void UpdateGameplayScreen(void)
         targetingMode = true;
         TextCopy(attackButton.text, "TARGET");
     }
-    else if (IsMouseButtonPressed(0) && hitMapWorld.hit)
+    else if (IsMouseButtonPressed(1) && hitMapWorld.hit)
     {
-        bool entityPicked = false;
-
-        /*for (int i = 0; i < numEntities; i++)
-        {
-            if (entities[i].isActive)
-            {
-                RayCollision hitMapEntity = GetRayCollisionBox(mouseRay, entities[i].boundingBox);
-
-                if (hitMapEntity.hit && entities[i].type == ENTITY_TYPE_CHARACTER)
-                {
-                    hitMapEntity.point = entities[i].position;
-                    DrawText(TextFormat("ORC HIT %.3f | %.3f | %.3f", hitMapEntity.point.x, hitMapEntity.point.y, hitMapEntity.point.z), 130, 180, 20, MAROON);
-                    //TraceLog(LOG_INFO, "HIT %f | %f | %f", hitMap.point.x, hitMap.point.y, hitMap.point.z);
-                    entityPicked = true;
-                    SelectEntity(i);
-                }
-            }
-        }*/
-
-        if (!entityPicked && selection != -1)
+        if (selection != -1)
         {
             Entity* entity = &entities[selection];
 
-            // FIX KILLING ENEMIES AGAIN AND ENDING TURN
-
+            // Entity movement
             if (selectionTile->entity == NULL && IsTileSelectable(selectionTile))
             {
                 entity->position = selectionRectPos;
@@ -731,7 +711,8 @@ void UpdateGameplayScreen(void)
 
                 EndTurn();
             }
-            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER && targetingMode == true)
+            // Entity attack
+            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER)
             {
                 //selectionTile->entity->isAlive = false;
        
