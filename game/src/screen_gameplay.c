@@ -202,7 +202,13 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera
             healthPos.y = entityPos.y - entity->size.y * 0.5f - 0.1f;
             healthPos.z = entityPos.z;
 
+            Vector3 cameraVector = Vector3Normalize(Vector3Subtract(camera.position, camera.target));
+            Vector3 cameraRightVector = Vector3Normalize(Vector3CrossProduct(camera.up, cameraVector));
+
             float healthPercentage = (float)entity->health / (float)entity->maxHealth;
+
+            healthPos.x -= cameraRightVector.x * (1 - healthPercentage) * 0.5f;
+            healthPos.z -= cameraRightVector.z * (1 - healthPercentage) * 0.5f;
 
             Color healthBarColor = RED;
             if (entity->teamID == entities[selectedUnitID].teamID)
@@ -642,7 +648,7 @@ void InitGameplayScreen(void)
     attackButton.hoverColor = DARKGRAY;
     attackButton.rect.width = 200;
     attackButton.rect.height = 120;
-    attackButton.rect.x = GetScreenWidth() / 2 - attackButton.rect.width / 2;
+    attackButton.rect.x = GetScreenWidth() / 2.0f - attackButton.rect.width / 2;
     attackButton.rect.y = GetScreenHeight() - attackButton.rect.height * 2;
     attackButton.fontSize = 32;
 
