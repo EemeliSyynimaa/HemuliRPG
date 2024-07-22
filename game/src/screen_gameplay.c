@@ -187,13 +187,20 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera
             healthPos.y = entityPos.y - entity->size.y * 0.5f - 0.1f;
             healthPos.z = entityPos.z;
 
+            Vector3 backgroundPos = healthPos;
+
             Vector3 cameraVector = Vector3Normalize(Vector3Subtract(camera.position, camera.target));
             Vector3 cameraRightVector = Vector3Normalize(Vector3CrossProduct(camera.up, cameraVector));
 
             float healthPercentage = (float)entity->health / (float)entity->maxHealth;
 
+            // Move healthbar color to the left.
             healthPos.x -= cameraRightVector.x * (1 - healthPercentage) * 0.5f;
             healthPos.z -= cameraRightVector.z * (1 - healthPercentage) * 0.5f;
+
+            // Move background color to the right.
+            backgroundPos.x += cameraRightVector.x * (healthPercentage) * 0.5f;
+            backgroundPos.z += cameraRightVector.z * (healthPercentage) * 0.5f;
 
             Color healthBarColor = RED;
             if (entity->teamID == entities[selectedUnitID].teamID)
@@ -201,6 +208,9 @@ void DrawEntities(Entity entities[], int numEntities, int selectedUnitID, Camera
                 healthBarColor = BLUE;
             }
 
+            DrawBillboardPro(camera, healthTexture, healthTextureRect, backgroundPos, up, (Vector2) { 1.0f - (1.0f * healthPercentage), 0.1f }, origin, rotation, DARKGRAY);
+
+            // Draw health bar.
             DrawBillboardPro(camera, healthTexture, healthTextureRect, healthPos, up, (Vector2) { 1.0f * healthPercentage, 0.1f }, origin, rotation, healthBarColor);
         }
         // TODO FIX.
@@ -691,7 +701,7 @@ void UpdateGameplayScreen(void)
         targetingMode = true;
         TextCopy(attackButton.text, "TARGET");
     }
-    else if (IsMouseButtonPressed(1) && hitMapWorld.hit)
+    else if (IsMouseButtonPressed(0) && hitMapWorld.hit)
     {
         if (selection != -1)
         {
