@@ -383,6 +383,7 @@ void SpawnCharacter(SpawnZone* spawnZone, Texture2D* texture, Texture2D* deathTe
 
             entity->isActive = true;
             entity->isAlive = true;
+            entity->target = NULL;
 
             entity->position = spawnPosition;
             entity->size = (Vector2){ 1.0f, 1.0f };
@@ -449,6 +450,20 @@ void KillEntity(Entity* entity)
     entity->isBlockingMovement = false;
 }
 
+bool IsEnemy(Entity* entity)
+{
+    Entity* selectedEntity = &entities[selection];
+
+    if (selectedEntity->teamID != entity->teamID)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void SelectEntity(int entityIndex)
 {
     numSelectionTiles = 0;
@@ -462,14 +477,11 @@ void SelectEntity(int entityIndex)
             for (int x = 0; x < MAP_WIDTH; x++)
             {
                 Tile* tile = &tileMap[z][x];
-                Vector2 tileCenterPos = { 0 };
-                tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
-                tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
+                float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tile->tileCenterPos);
 
-                float tileDistance = Vector2Distance((Vector2) { entity->position.x + 0.5f, entity->position.z + 0.5f }, tileCenterPos);
-
-                {
-                    if (tileDistance <= entity->speed && tile->walkable)
+                {   
+                    // Add moveable tiles and tiles with an enemy entity in melee range.
+                    if ((tileDistance <= entity->speed && tile->walkable) || (tileDistance <= (float)entity->speed + 1.45f && tile->entity && IsEnemy(tile->entity)))
                     {
                         selectionTiles[numSelectionTiles] = tile;
                         numSelectionTiles++;
@@ -604,6 +616,9 @@ void InitGameplayScreen(void)
             tile->topRight = (Vector3){ (float)x + TILE_SIZE, depthMap[z + 1][x + 1], (float)z + TILE_SIZE };
             tile->topLeft = (Vector3){ (float)x, depthMap[z + 1][x], (float)z + TILE_SIZE };
 
+            tile->tileCenterPos.x = (tile->bottomLeft.x + tile->topRight.x) / 2;
+            tile->tileCenterPos.y = (tile->bottomLeft.z + tile->topRight.z) / 2;
+
             tile->entityPos = (depthMap[z][x] + depthMap[z][x + 1] + depthMap[z + 1][x + 1] + depthMap[z + 1][x]) / 4;
             tile->texture = grassTexture;
             tile->entity = NULL;
@@ -707,36 +722,60 @@ void UpdateGameplayScreen(void)
         {
             Entity* entity = &entities[selection];
 
-            // Entity movement
-            if (selectionTile->entity == NULL && IsTileSelectable(selectionTile))
+            if (IsTileSelectable(selectionTile))
             {
-                entity->position = selectionRectPos;
-                Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
-                Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
-                entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
-
-                entity->tile->entity = NULL;
-                entity->tile = selectionTile;
-                selectionTile->entity = entity;
-
-                EndTurn();
-            }
-            // Entity attack
-            else if (selectionTile->entity && selectionTile->entity->teamID != entity->teamID && selectionTile->entity->type == ENTITY_TYPE_CHARACTER)
-            {
-                //selectionTile->entity->isAlive = false;
-       
-                int damage = GetRandomValue(entity->minAttack, entity->maxAttack);
-                selectionTile->entity->health = selectionTile->entity->health - damage;
-
-                if (selectionTile->entity->health <= 0)
+                // Entity movement
+                if (selectionTile->entity == NULL || (entity->target != NULL && selectionTile->entity == entity))
                 {
-                    selectionTile->entity->health = 0;
-                    KillEntity(selectionTile->entity);
+                    entity->position = selectionRectPos;
+                    Vector3 orcBoxMin = { entity->position.x, entity->position.y - boxHeight, entity->position.z };
+                    Vector3 orcBoxMax = { entity->position.x + boxSize, entity->position.y, entity->position.z + boxSize };
+                    entity->boundingBox = (BoundingBox){ orcBoxMin, orcBoxMax };
+
+                    entity->tile->entity = NULL;
+                    entity->tile = selectionTile;
+                    selectionTile->entity = entity;
+
+                    // Attack
+                    if (entity->target != NULL)
+                    {
+                        int damage = GetRandomValue(entity->minAttack, entity->maxAttack);
+                        entity->target->health = entity->target->health - damage;
+
+                        if (entity->target->health <= 0)
+                        {
+                            entity->target->health = 0;
+                            KillEntity(entity->target);
+                        }
+                    }
+                    entity->target = NULL;
+                    EndTurn();
                 }
 
-                EndTurn();
+                // Entity attack
+                else if (IsEnemy(selectionTile->entity) && selectionTile->entity->type == ENTITY_TYPE_CHARACTER)
+                {
+                    //selectionTile->entity->isAlive = false;
+
+                    // Find tiles where we can hit the enemy.
+                    entity->target = selectionTile->entity;
+                    Vector3 enemyPos = selectionTile->entity->position;
+                    int numAttackTiles = 0;
+
+                    for (int i = 0; i < numSelectionTiles; i++)
+                    {
+                        float tileDistance = Vector2Distance((Vector2) { enemyPos.x + 0.5f, enemyPos.z + 0.5f }, selectionTiles[i]->tileCenterPos);
+
+                        if (tileDistance < 1.45f) // Replace with attack range?
+                        {
+                            selectionTiles[numAttackTiles] = selectionTiles[i];
+                            numAttackTiles++;
+                        }
+                    }
+                    numSelectionTiles = numAttackTiles;
+                }
             }
+
         }
     }
     if (selection != -1)

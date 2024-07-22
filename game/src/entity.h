@@ -26,6 +26,7 @@ typedef struct Entity
 	// Gameplay variables
 
 	Tile* tile;
+	struct Entity* target;
 
 	bool isActive;
 	bool isAlive;
